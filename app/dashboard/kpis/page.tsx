@@ -65,7 +65,7 @@ function KpiCard({ kpi, delay }: { kpi: Kpi; delay: number }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="text-xl font-bold text-[#213053]">{displayValue}</span>
-            <span className="text-xs text-on-surface-variant">/ {displayTarget}</span>
+            <span className="text-xs text-on-surface-variant">/ {displayTarget}</span>1
           </div>
           <div className={`flex items-center gap-0.5 ${kpi.trend === 'up' ? 'text-emerald-500' : kpi.trend === 'down' ? 'text-red-400' : 'text-slate-400'}`}>
             <span className="material-symbols-outlined text-[16px]">
