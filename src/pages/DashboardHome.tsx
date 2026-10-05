@@ -4,6 +4,8 @@ import { SectionTitle } from '@/components/ui/SectionTitle'
 
 const quickActions = [
   { icon: 'analytics', label: 'Mis KPIs', hint: 'Revisa tu desempeño', path: '/dashboard/kpis', color: 'bg-brand-blue/12', iconColor: 'text-brand-blue' },
+  { icon: 'rate_review', label: 'Evaluación de desempeño', hint: 'Chatbot EvaBot', path: '/dashboard/evaluations', color: 'bg-orange-50', iconColor: 'text-orange-500' },
+  { icon: 'workspace_premium', label: 'Generar certificado', hint: 'Certificado laboral', path: '/dashboard/certificates', color: 'bg-violet-50', iconColor: 'text-violet-600' },
   { icon: 'fact_check', label: 'Solicitar Permiso', hint: 'Vacaciones y licencias', path: '/dashboard/requests', color: 'bg-amber-100', iconColor: 'text-amber-600' },
   { icon: 'description', label: 'Documentos', hint: 'Políticas y formatos', path: '/dashboard/documents', color: 'bg-emerald-50', iconColor: 'text-emerald-600' },
   { icon: 'hub', label: 'Organigrama', hint: 'Estructura del equipo', path: '/dashboard/org-chart', color: 'bg-indigo-50', iconColor: 'text-indigo-600' },

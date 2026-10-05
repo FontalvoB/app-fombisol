@@ -130,7 +130,7 @@ export default function Login() {
                   disabled={loading}
                   fullWidth
                   size="lg"
-                  iconRight={loading ? undefined : 'arrow_forward'}
+                  showArrow={!loading}
                   className="mt-1"
                 >
                   {loading ? (

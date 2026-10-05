@@ -185,13 +185,9 @@ export default function RequestsPage() {
         ]}
 
         action={
-
-          <Button variant="amber" size="sm" icon="add" onClick={() => history.push('/dashboard/requests/new')}>
-
-            Nueva
-
+          <Button variant="amber" size="md" icon="add" fullWidth showArrow onClick={() => history.push('/dashboard/requests/new')}>
+            Nueva solicitud
           </Button>
-
         }
 
       />
@@ -236,10 +232,8 @@ export default function RequestsPage() {
 
           <p className="text-xs text-slate-400 mt-1">Crea tu primera solicitud de permiso</p>
 
-          <Button variant="primary" className="mt-4" icon="add" onClick={() => history.push('/dashboard/requests/new')}>
-
+          <Button variant="primary" className="mt-4" icon="add" showArrow onClick={() => history.push('/dashboard/requests/new')}>
             Crear solicitud
-
           </Button>
 
         </div>

@@ -5,15 +5,16 @@ interface FabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label?: string
 }
 
-export function Fab({ icon = 'add', label, className, ...props }: FabProps) {
+export function Fab({ icon = 'add', label, className, type = 'button', ...props }: FabProps) {
   return (
     <button
-      className={cn('fab', label && 'fab-extended', className)}
+      type={type}
+      className={cn('app-fab', label && 'app-fab--extended', className)}
       aria-label={label || 'Acción principal'}
       {...props}
     >
-      <span className="fab-icon material-symbols-outlined">{icon}</span>
-      {label && <span className="fab-label">{label}</span>}
+      <span className="app-fab__icon material-symbols-outlined">{icon}</span>
+      {label && <span className="app-fab__label">{label}</span>}
     </button>
   )
 }

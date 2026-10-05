@@ -19,14 +19,14 @@ export function PageHero({ eyebrow, title, subtitle, stats, action, className }:
     <div className={cn('page-hero', className)}>
       <div className="page-hero-glow" />
       <div className="page-hero-content">
-        <div className="flex items-start justify-between gap-3">
+        <div className="page-hero-top">
           <div className="min-w-0 flex-1">
             <p className="page-hero-eyebrow">{eyebrow}</p>
             <p className="page-hero-title">{title}</p>
             {subtitle && <p className="page-hero-subtitle">{subtitle}</p>}
           </div>
-          {action && <div className="flex-shrink-0 pt-0.5">{action}</div>}
         </div>
+
         {stats && stats.length > 0 && (
           <div className="page-hero-stats">
             {stats.map(stat => (
@@ -37,6 +37,8 @@ export function PageHero({ eyebrow, title, subtitle, stats, action, className }:
             ))}
           </div>
         )}
+
+        {action && <div className="page-hero-action">{action}</div>}
       </div>
     </div>
   )

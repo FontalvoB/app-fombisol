@@ -13,13 +13,16 @@ import SolicitudForm from '@/pages/SolicitudForm'
 import ProfilePage from '@/pages/Profile'
 import NotificationsPage from '@/pages/Notifications'
 import OrgChartPage from '@/pages/OrgChart'
+import CertificadoPage from '@/pages/Certificado'
+import EvaluationsPage from '@/pages/Evaluations'
+import EvaluationChatPage from '@/pages/EvaluationChat'
 
 const navItems = [
   { path: '/dashboard', icon: 'grid_view', label: 'Inicio' },
   { path: '/dashboard/kpis', icon: 'analytics', label: 'KPIs' },
   { path: '/dashboard/documents', icon: 'description', label: 'Docs' },
   { path: '/dashboard/requests', icon: 'fact_check', label: 'Permisos' },
-  { path: '/dashboard/profile', icon: 'manage_accounts', label: 'Perfil' },
+  { path: '/dashboard/evaluations', icon: 'rate_review', label: 'Evaluar' },
 ]
 
 const sidebarItems = [
@@ -28,6 +31,8 @@ const sidebarItems = [
   { path: '/dashboard/documents', icon: 'description', label: 'Documentos' },
   { path: '/dashboard/org-chart', icon: 'hub', label: 'Organigrama' },
   { path: '/dashboard/requests', icon: 'fact_check', label: 'Permisos' },
+  { path: '/dashboard/certificates', icon: 'workspace_premium', label: 'Certificados' },
+  { path: '/dashboard/evaluations', icon: 'rate_review', label: 'Evaluación' },
   { path: '/dashboard/notifications', icon: 'notifications', label: 'Notificaciones' },
   { path: '/dashboard/profile', icon: 'manage_accounts', label: 'Perfil' },
 ]
@@ -38,7 +43,9 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { userRole } = useApp()
 
-  const hideBottomNav = pathname.includes('/documents/') || pathname.includes('/requests/new')
+  const hideBottomNav = pathname.includes('/documents/') || pathname.includes('/requests/new') || pathname.includes('/evaluations/chat')
+  const hideHeader = pathname.includes('/evaluations')
+  const isEvalFullscreen = pathname.includes('/evaluations')
   const isDashboard = pathname === '/dashboard'
 
   function getPageTitle() {
@@ -47,6 +54,9 @@ export default function DashboardLayout() {
     if (pathname.includes('documents/')) return 'Lectura'
     if (pathname.includes('documents')) return 'Documentos'
     if (pathname.includes('requests/new')) return 'Nueva Solicitud'
+    if (pathname.includes('certificates')) return 'Generar certificado'
+    if (pathname.includes('evaluations/chat')) return 'EvaBot'
+    if (pathname.includes('evaluations')) return 'Evaluación de desempeño'
     if (pathname.includes('org-chart')) return 'Organigrama'
     if (pathname.includes('requests')) return 'Permisos'
     if (pathname.includes('notifications')) return 'Notificaciones'
@@ -117,6 +127,7 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
+      {!hideHeader && (
       <header className="dashboard-header">
         <div className="dashboard-header-inner">
           <div className="flex items-center gap-3 min-w-0">
@@ -125,7 +136,7 @@ export default function DashboardLayout() {
             </button>
             {isDashboard ? (
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center shadow-brand">
+                <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center shadow-brand">
                   <span className="material-symbols-outlined text-white text-[16px]">diversity_3</span>
                 </div>
                 <div>
@@ -135,8 +146,8 @@ export default function DashboardLayout() {
               </div>
             ) : (
               <div className="flex items-center gap-2.5 min-w-0">
-                <button onClick={() => history.goBack()} className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0" aria-label="Volver">
-                  <span className="material-symbols-outlined text-[18px] text-slate-600">arrow_back_ios_new</span>
+                <button onClick={() => history.goBack()} className="header-back-btn" aria-label="Volver">
+                  <span className="material-symbols-outlined text-[18px]">arrow_back_ios_new</span>
                 </button>
                 <div className="min-w-0">
                   <h1 className="header-page-title truncate">{getPageTitle()}</h1>
@@ -145,24 +156,25 @@ export default function DashboardLayout() {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={() => history.push('/dashboard/notifications')} className="header-btn relative" aria-label="Notificaciones">
               <span className="material-symbols-outlined text-[22px]">notifications</span>
               {currentUser.notifications > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-brand-yellow text-[9px] font-bold flex items-center justify-center text-brand-dark">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-brand-yellow text-[9px] font-bold flex items-center justify-center text-brand-dark border-2 border-white">
                   {currentUser.notifications}
                 </span>
               )}
             </button>
-            <button onClick={() => history.push('/dashboard/profile')} className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center shadow-brand border-2 border-white" aria-label="Perfil">
-              <span className="material-symbols-outlined text-white text-[16px]">person</span>
+            <button onClick={() => history.push('/dashboard/profile')} className="header-avatar-btn" aria-label="Perfil">
+              <span className="material-symbols-outlined text-[16px]">person</span>
             </button>
           </div>
         </div>
       </header>
+      )}
 
-      <IonContent fullscreen scrollY className="dashboard-ion-content">
-        <div className={`dashboard-scroll ${hideBottomNav ? 'no-bottom-nav' : ''}`}>
+      <IonContent fullscreen scrollY className={`dashboard-ion-content ${isEvalFullscreen ? 'eval-fullscreen-ion' : ''}`}>
+        <div className={`dashboard-scroll ${hideBottomNav ? 'no-bottom-nav' : ''} ${isEvalFullscreen ? 'eval-fullscreen' : ''}`}>
           <Switch>
             <Route exact path="/dashboard" component={DashboardHome} />
             <Route exact path="/dashboard/kpis" component={KpisPage} />
@@ -170,6 +182,9 @@ export default function DashboardLayout() {
             <Route exact path="/dashboard/documents/:id" component={DocumentViewer} />
             <Route exact path="/dashboard/requests" component={RequestsPage} />
             <Route exact path="/dashboard/requests/new" component={SolicitudForm} />
+            <Route exact path="/dashboard/certificates" component={CertificadoPage} />
+            <Route exact path="/dashboard/evaluations" component={EvaluationsPage} />
+            <Route exact path="/dashboard/evaluations/chat" component={EvaluationChatPage} />
             <Route exact path="/dashboard/profile" component={ProfilePage} />
             <Route exact path="/dashboard/notifications" component={NotificationsPage} />
             <Route exact path="/dashboard/org-chart" component={OrgChartPage} />
