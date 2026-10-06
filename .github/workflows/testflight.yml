@@ -1,0 +1,27 @@
+# AUTODESPLIEGUE a TestFlight: push a develop → build nativo (backend DEV) → TestFlight.
+name: testflight
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "src/**"
+      - "ios/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.testflight"
+      - ".github/workflows/ios-release.yml"
+      - ".github/workflows/testflight.yml"
+
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false # no cancelar: cada build es un build number nuevo
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/ios-release.yml
+    with:
+      mode: testflight
+      lane: testflight
+    secrets: inherit

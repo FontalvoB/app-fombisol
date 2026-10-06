@@ -1,0 +1,99 @@
+# Fastfile — PeopleNet mobile (com.peoplenet.app)
+#
+# Flujo de autodespliegue iOS:
+#   - lane testflight : build --mode testflight (backend DEV)   → TestFlight
+#   - lane appstore   : build --mode production (backend PROD)  → App Store Connect
+#     (upload solamente: la publicación a la tienda es MANUAL, decisión del equipo)
+#
+# Autenticación: App Store Connect API key (método soportado, sin 2FA interactivo):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64 (contenido del .p8 en base64)
+# Certificados: match con MATCH_GIT_URL + MATCH_PASSWORD.
+#
+# Versionado: versionName del proyecto iOS queda fijo (1.0.0 salvo cambio manual);
+# el build number se deriva del run de GitHub Actions (100 + run_number) para
+# garantizar monotonicidad sin depender del estado del repositorio.
+
+default_platform(:ios)
+
+# Bloque de opciones de App Store Connect API key (se usa en los lanes de upload).
+private_lane :asc_api_key do
+  unless ENV["ASC_KEY_ID"] && ENV["ASC_ISSUER_ID"] && ENV["ASC_KEY_P8_BASE64"]
+    UI.user_error!("Faltan secrets de App Store Connect (ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8_BASE64) — ver DEPLOY.md")
+  end
+  require "base64"
+  app_store_connect_api_key(
+    key_id: ENV["ASC_KEY_ID"],
+    issuer_id: ENV["ASC_ISSUER_ID"],
+    key_content: Base64.decode64(ENV["ASC_KEY_P8_BASE64"]),
+    is_key_content_base64: false,
+    duration: 1200,
+    in_house: false,
+  )
+end
+
+# Descarga/actualiza certificados + provisioning profiles con match.
+private_lane :prepare_signing do |options|
+  unless ENV["MATCH_GIT_URL"] && ENV["MATCH_PASSWORD"]
+    UI.user_error!("Faltan secrets de match (MATCH_GIT_URL / MATCH_PASSWORD) — ver DEPLOY.md")
+  end
+  match(
+    type: "appstore",
+    readonly: options[:readonly] != false, # en CI true: solo lee del repo de certs
+    app_identifier: "com.peoplenet.app",
+  )
+end
+
+# Build number monotónico derivado del run de Actions (evita colisiones).
+private_lane :bump_build_number do
+  run_number = ENV["GITHUB_RUN_NUMBER"] ? ENV["GITHUB_RUN_NUMBER"].to_i : 0
+  build_number = 100 + run_number
+  UI.message!("Build number: #{build_number}")
+  increment_build_number(
+    build_number: build_number,
+    xcodeproj: "App.xcodeproj",
+  )
+end
+
+platform :ios do
+  desc "Sube build de desarrollo a TestFlight (rama develop)"
+  lane :testflight do
+    asc_api_key
+    prepare_signing
+    bump_build_number
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "../build",
+      output_name: "peoplenet-testflight.ipa",
+      silent: true,
+    )
+    pilot(
+      ipa: "../build/peoplenet-testflight.ipa",
+      skip_waiting_for_build_processing: true, # no bloquea el runner 15+ min
+      distribute_external: false,
+      changelog: "Build automático desde develop — #{ENV['GITHUB_SHA']&.[](0, 8)}",
+    )
+  end
+
+  desc "Sube build de producción a App Store Connect (publicación manual)"
+  lane :appstore do
+    asc_api_key
+    prepare_signing
+    bump_build_number
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "../build",
+      output_name: "peoplenet-appstore.ipa",
+      silent: true,
+    )
+    upload_to_app_store(
+      ipa: "../build/peoplenet-appstore.ipa",
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false, # NUNCA auto-publicar: decisión manual del equipo
+    )
+  end
+end

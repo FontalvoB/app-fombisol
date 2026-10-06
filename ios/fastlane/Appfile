@@ -1,0 +1,10 @@
+# Identificación de la app en Apple (los valores vienen de CI/secrets).
+app_identifier("com.peoplenet.app")
+
+# Opcionales para operación manual fuera de CI:
+# apple_id(ENV["APPLE_ID"]) si defines FASTLANE_USER.
+# itc_team_id / team_id desde APPLE_TEAM_ID cuando esté disponible.
+if ENV["APPLE_TEAM_ID"]
+  itc_team_id(ENV["APPLE_TEAM_ID"])
+  team_id(ENV["APPLE_TEAM_ID"])
+end

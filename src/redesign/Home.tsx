@@ -1,24 +1,185 @@
-import { ProgressRing, PerformanceChart } from "./Charts";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Icon, Badge, Heading } from "./shared";
-import { type RequestItem, docs, metrics } from "./data";
+import {
+  Icon,
+  Badge,
+  Heading,
+  Button,
+  SectionError,
+  LoadingNote,
+} from "./shared";
+import { ProgressRing } from "./Charts";
+import {
+  useApi,
+  useEmployeeIndicators,
+  readSession,
+  displayName,
+  initialsOf,
+  sessionEmployeeId,
+  periodsFromIndicators,
+  periodLabel,
+  formatMeasure,
+  type MonthPeriod,
+} from "../lib/api";
+import type {
+  CorporateDocumentDTO,
+  ConfirmedDocumentIds,
+  DashboardActivityDto,
+  EmployeeDashboardResponse,
+  EmployeeMonthlyAnalyticsResponse,
+  EvalPeriod,
+  SolicitudNovedadStatsResponse,
+} from "../lib/api-types";
 
-export function Home({
-  requests,
-  reads,
-  name,
-}: {
-  requests: RequestItem[];
-  reads: string[];
-  name: string;
-}) {
+/**
+ * M2 — Home / Resumen con datos reales de kpis-ms.
+ * - Identidad desde la sesión (peoplenet-auth): nunca nombres demo.
+ * - Resumen personal: GET /api/dashboard/employee/{employeeId} (requiere
+ *   kpis.dashboard → para el fixture responde 403 → tarjeta restringida).
+ * - Anillo de avance: analytics del mes más reciente CON datos reales
+ *   (GET /api/indicators/employee/{id}/year/{y}/month/{m}/analytics).
+ * - CTA de evaluación: GET /api/evaluations/periods (período activo real).
+ * - Novedades: GET /api/dashboard/activities (feed compartido SIN ids:
+ *   no se inventan links por actividad ni badges de no-leído persistentes).
+ * - Contadores: /api/solicitudes/stats?scope=propias y consultas M5 de
+ *   documentos + confirmaciones (ver PLAN-FOMBISOL-REVISADO.md §4 M2).
+ */
+
+function todayLabel(): string {
+  return new Date()
+    .toLocaleDateString("es-CO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })
+    .toUpperCase();
+}
+
+/** Primera palabra para el saludo; normaliza nombres en MAYÚSCULAS. */
+function greetingWord(fullName: string): string {
+  const first = fullName.trim().split(/\s+/)[0] || fullName.trim();
+  if (first && first === first.toUpperCase() && first !== first.toLowerCase()) {
+    const lower = first.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+  return first;
+}
+
+/** Fecha YYYY-MM-DD → partes cortas es-CO sin corrimiento de zona horaria. */
+function shortDateParts(
+  iso: string | null,
+): { day: string; month: string } | null {
+  if (!iso) return null;
+  const parsed = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return {
+    day: parsed.toLocaleDateString("es-CO", { day: "2-digit" }),
+    month: parsed
+      .toLocaleDateString("es-CO", { month: "short" })
+      .toUpperCase()
+      .replace(".", ""),
+  };
+}
+
+/** Timestamp ISO del feed → texto es-CO legible. */
+function activityTimestamp(ts: string | null): string {
+  if (!ts) return "Sin dato";
+  const parsed = new Date(ts);
+  if (Number.isNaN(parsed.getTime())) return "Sin dato";
+  return parsed.toLocaleString("es-CO", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function Home() {
+  const session = readSession();
+  const user = session?.user ?? null;
+  const employeeId = sessionEmployeeId();
+  const userId = user?.userId ?? null;
+  const name = displayName(user) || "usuario";
+  const greeting = greetingWord(name) || "usuario";
+  const initials = initialsOf(name) || "PN";
+
+  // Resumen personal (requiere kpis.dashboard; el fixture E2E recibe 403).
+  const summary = useApi<EmployeeDashboardResponse>(
+    employeeId != null ? `/dashboard/employee/${employeeId}` : null,
+  );
+
+  // Indicadores reales del colaborador → períodos disponibles + breakdown.
+  const indicators = useEmployeeIndicators(employeeId);
+  const periods = periodsFromIndicators(indicators.state.data);
+  const ringPeriod: MonthPeriod | null = periods[0] ?? null;
+
+  // Analytics del período más reciente con datos (alimenta anillo y contadores).
+  const analytics = useApi<EmployeeMonthlyAnalyticsResponse>(
+    employeeId != null && ringPeriod
+      ? `/indicators/employee/${employeeId}/year/${ringPeriod.year}/month/${ringPeriod.month}/analytics`
+      : null,
+  );
+
+  // Períodos activos de evaluación (CTA real).
+  const evalPeriods = useApi<EvalPeriod[]>("/evaluations/periods");
+  const activePeriod =
+    evalPeriods.state.data?.find((p) => p.isActive === true) ?? null;
+
+  // Feed de actividad compartido; sin ids → filas sin enlaces inventados.
+  const activities = useApi<DashboardActivityDto[]>("/dashboard/activities");
+
+  // Contadores de la bandeja propia (fixture: vacío → 0 es valor real).
+  const solStats = useApi<SolicitudNovedadStatsResponse>(
+    "/solicitudes/stats?scope=propias",
+  );
+
+  // Documentos corporativos + confirmaciones del usuario (consultas M5).
+  const documents = useApi<CorporateDocumentDTO[]>("/corporate-documents", {
+    unwrapApiResponse: true,
+  });
+  const confirmedIds = useApi<ConfirmedDocumentIds>(
+    userId != null ? `/document-confirmations/user/${userId}/document-ids` : null,
+    { unwrapApiResponse: true },
+  );
+  const pendingDocs = useMemo(() => {
+    const docs = documents.state.data;
+    const ids = confirmedIds.state.data?.documentIds;
+    if (!Array.isArray(docs) || !Array.isArray(ids)) return null;
+    const confirmed = new Set(ids);
+    return docs.filter((d) => d.id != null && !confirmed.has(d.id)).length;
+  }, [documents.state.data, confirmedIds.state.data]);
+
+  const analyticsData = analytics.state.data;
+  const breakdown = analyticsData?.indicatorBreakdown ?? [];
+
+  // Prioridad del anillo: resumen real del empleado (dashboard/employee,
+  // agregado de TODOS sus indicadores) > analytics del último mes con datos.
+  // El fallback mensual solo aplica cuando /dashboard/employee responde 403
+  // (usuario sin permiso kpis.dashboard) o aún no responde.
+  const summaryData = summary.state.data;
+  const summaryRing = summaryData
+    ? {
+        value:
+          Number(summaryData.totalIndicators) > 0
+            ? Math.round(
+                (Number(summaryData.completedIndicators) /
+                  Number(summaryData.totalIndicators)) *
+                  100,
+              )
+            : 0,
+        label: "indicadores evaluados",
+        counts: `${summaryData.completedIndicators} de ${summaryData.totalIndicators} indicadores evaluados`,
+      }
+    : null;
+
   return (
     <>
       <div className="vivid-mobile-greeting">
         <div>
-          <span>LUNES, 5 DE OCTUBRE</span>
+          <span>{todayLabel()}</span>
           <h1>
-            Hola, {name.split(" ")[0]} <span className="greeting-sun">✦</span>
+            Hola, {greeting} <span className="greeting-sun">✦</span>
           </h1>
           <p>Hoy es un buen día para crecer.</p>
         </div>
@@ -27,18 +188,14 @@ export function Home({
           className="greeting-avatar"
           aria-label="Ver mi perfil"
         >
-          {name
-            .split(" ")
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join("")}
+          {initials}
           <i />
         </Link>
       </div>
       <div className="vivid-desktop-heading">
         <Heading
-          eyebrow="LUNES, 5 DE OCTUBRE DE 2026"
-          title={`Hola, ${name.split(" ")[0]}. Qué bueno tenerte aquí.`}
+          eyebrow={todayLabel()}
+          title={`Hola, ${greeting}. Qué bueno tenerte aquí.`}
           description="Un nuevo día para conectar, avanzar y hacer que las cosas pasen."
           action={
             <Link className="pn-button secondary" to="/dashboard/requests/new">
@@ -68,12 +225,44 @@ export function Home({
                 Tus logros nos inspiran.
               </p>
             </div>
-            <ProgressRing value={87.3} label="de tu objetivo" compact />
+            {summaryRing ? (
+              <ProgressRing value={summaryRing.value} label={summaryRing.label} compact />
+            ) : analytics.state.status === "success" &&
+            analyticsData?.completionRate != null ? (
+              <ProgressRing
+                value={analyticsData.completionRate}
+                label={`indicadores evaluados · ${periodLabel(ringPeriod as MonthPeriod)}`}
+                compact
+              />
+            ) : indicators.state.status === "error" ? (
+              <SectionError
+                error={indicators.state.error ?? "Sin dato"}
+                restricted={indicators.state.errorStatus === 403}
+                onRetry={indicators.reload}
+              />
+            ) : employeeId == null ? (
+              <LoadingNote label="Usuario sin colaborador asociado." />
+            ) : indicators.state.status === "success" && !periods.length ? (
+              <LoadingNote label="Aún no tienes indicadores asignados." />
+            ) : (
+              <LoadingNote label="Cargando tu avance…" />
+            )}
           </div>
           <div className="hero-bottom">
-            <span className="hero-growth">
-              <Icon name="trending_up" size={16} /> +4,2 pts este mes
-            </span>
+            {summaryRing ? (
+              <span className="hero-growth">
+                <Icon name="check_circle" size={16} /> {summaryRing.counts}
+              </span>
+            ) : analytics.state.status === "success" &&
+            analyticsData?.totalIndicators != null ? (
+              <span className="hero-growth">
+                <Icon name="check_circle" size={16} />{" "}
+                {analyticsData.completedIndicators ?? 0} de{" "}
+                {analyticsData.totalIndicators} indicadores evaluados
+              </span>
+            ) : (
+              <span />
+            )}
             <Link to="/dashboard/kpis">
               Ver mis metas <Icon name="arrow_forward" size={18} />
             </Link>
@@ -81,96 +270,168 @@ export function Home({
           <span className="hero-orbit orbit-one" aria-hidden="true" />
           <span className="hero-orbit orbit-two" aria-hidden="true" />
         </section>
-        <Link className="pn-focus" to="/dashboard/evaluations">
-          <div className="focus-top">
-            <span>
-              <i /> EN TU RADAR
-            </span>
-            <Icon name="arrow_outward" />
-          </div>
-          <span className="focus-icon">
-            <Icon name="target" size={27} />
-          </span>
-          <h3>
-            Tu crecimiento <br />
-            merece un momento.
-          </h3>
-          <p>
-            Ya puedes completar tu evaluación
-            <br />
-            de desempeño de este trimestre.
-          </p>
-          <span className="focus-bottom">
-            Comenzar evaluación <Icon name="arrow_forward" size={18} />
-          </span>
-        </Link>
-      </div>
-      <div className="pn-stats">
-        {[
-          [
-            "monitoring",
-            "Metas del trimestre",
-            "04",
-            "metas",
-            "1 alcanzada",
-            "sigue avanzando",
-            "kpis",
-          ],
-          [
-            "event_available",
-            "Solicitudes pendientes",
-            String(
-              requests.filter((x) => x.status === "Pendiente").length,
-            ).padStart(2, "0"),
-            "",
-            "En revisión",
-            "por tu líder",
-            "requests",
-          ],
-          [
-            "folder_open",
-            "Documentos por leer",
-            String(docs.length - reads.length).padStart(2, "0"),
-            "",
-            "Mantente al día",
-            "con tu organización",
-            "documents",
-          ],
-          [
-            "beach_access",
-            "Días de vacaciones",
-            "15",
-            "días",
-            "Tu próximo descanso",
-            "te está esperando",
-            "requests/new",
-          ],
-        ].map(([icon, label, value, unit, detail, sub, path], i) => (
-          <Link to={"/dashboard/" + path} className="pn-stat" key={label}>
-            <div>
-              <span className={`stat-icon stat-${i}`}>
-                <Icon name={icon} />
+        {evalPeriods.state.status === "error" ? (
+          <section className="pn-focus">
+            <div className="focus-top">
+              <span>
+                <i /> EN TU RADAR
               </span>
-              <Icon name="north_east" size={16} />
+              <Icon name="arrow_outward" />
             </div>
-            <p>{label}</p>
-            <strong>
-              {value}
-              <small>{unit}</small>
-            </strong>
-            {i === 0 && (
-              <span className="mini-goal-dots" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-                <i />
+            <span className="focus-icon">
+              <Icon name="target" size={27} />
+            </span>
+            <h3>No pudimos consultar los períodos</h3>
+            <p>{evalPeriods.state.error}</p>
+            <Button secondary onClick={evalPeriods.reload}>
+              Reintentar
+            </Button>
+          </section>
+        ) : activePeriod ? (
+          <Link className="pn-focus" to="/dashboard/evaluations">
+            <div className="focus-top">
+              <span>
+                <i /> EN TU RADAR
               </span>
-            )}
-            <span className="stat-detail">
-              <b>{detail}</b> {sub}
+              <Icon name="arrow_outward" />
+            </div>
+            <span className="focus-icon">
+              <Icon name="target" size={27} />
+            </span>
+            <h3>
+              Tu crecimiento <br />
+              merece un momento.
+            </h3>
+            <p>
+              Ya puedes completar tu evaluación
+              <br />
+              de desempeño del período {activePeriod.name ?? "sin dato"}.
+            </p>
+            <span className="focus-bottom">
+              Comenzar evaluación <Icon name="arrow_forward" size={18} />
             </span>
           </Link>
-        ))}
+        ) : (
+          <div
+            className="pn-focus"
+            aria-disabled="true"
+            role="note"
+            title="Sin período de evaluación activo"
+          >
+            <div className="focus-top">
+              <span>
+                <i /> EN TU RADAR
+              </span>
+              <Icon name="target" />
+            </div>
+            <span className="focus-icon">
+              <Icon name="target" size={27} />
+            </span>
+            <h3>
+              Tu crecimiento <br />
+              merece un momento.
+            </h3>
+            <p>
+              {evalPeriods.state.status === "loading"
+                ? "Consultando períodos de evaluación…"
+                : "Por ahora no hay un período de evaluación activo."}
+            </p>
+            <span className="focus-bottom">Evaluación no disponible</span>
+          </div>
+        )}
+      </div>
+      <div className="pn-stats">
+        <Link to="/dashboard/kpis" className="pn-stat">
+          <div>
+            <span className="stat-icon stat-0">
+              <Icon name="monitoring" />
+            </span>
+            <Icon name="north_east" size={16} />
+          </div>
+          <p>Metas del mes</p>
+          <strong>
+            {analyticsData?.totalIndicators != null
+              ? String(analyticsData.totalIndicators).padStart(2, "0")
+              : "--"}
+            <small>metas</small>
+          </strong>
+          <span className="stat-detail">
+            {analytics.state.status === "loading"
+              ? "Cargando…"
+              : analytics.state.status === "error"
+                ? analytics.state.error
+                : `${analyticsData?.completedIndicators ?? 0} evaluadas · ${analyticsData?.pendingIndicators ?? 0} pendientes`}
+          </span>
+        </Link>
+        <Link to="/dashboard/requests" className="pn-stat">
+          <div>
+            <span className="stat-icon stat-1">
+              <Icon name="event_available" />
+            </span>
+            <Icon name="north_east" size={16} />
+          </div>
+          <p>Solicitudes pendientes</p>
+          <strong>
+            {solStats.state.data
+              ? String(solStats.state.data.pendientes).padStart(2, "0")
+              : "--"}
+            <small />
+          </strong>
+          <span className="stat-detail">
+            {solStats.state.status === "loading"
+              ? "Cargando…"
+              : solStats.state.status === "error"
+                ? solStats.state.error
+                : solStats.state.data?.total
+                  ? "En revisión"
+                  : "No tienes solicitudes pendientes"}
+          </span>
+        </Link>
+        <Link to="/dashboard/documents" className="pn-stat">
+          <div>
+            <span className="stat-icon stat-2">
+              <Icon name="folder_open" />
+            </span>
+            <Icon name="north_east" size={16} />
+          </div>
+          <p>Documentos por leer</p>
+          <strong>
+            {pendingDocs != null ? String(pendingDocs).padStart(2, "0") : "--"}
+            <small />
+          </strong>
+          <span className="stat-detail">
+            {documents.state.status === "loading" ||
+            (userId != null && confirmedIds.state.status === "loading")
+              ? "Cargando…"
+              : documents.state.status === "error"
+                ? documents.state.error
+                : confirmedIds.state.status === "error"
+                  ? confirmedIds.state.error
+                  : "Mantente al día con tu organización"}
+          </span>
+        </Link>
+        <Link to="/dashboard/evaluations" className="pn-stat">
+          <div>
+            <span className="stat-icon stat-3">
+              <Icon name="target" />
+            </span>
+            <Icon name="north_east" size={16} />
+          </div>
+          <p>Evaluación de desempeño</p>
+          <strong>
+            {activePeriod ? "Abierta" : "--"}
+            <small />
+          </strong>
+          <span className="stat-detail">
+            {evalPeriods.state.status === "loading"
+              ? "Cargando…"
+              : evalPeriods.state.status === "error"
+                ? evalPeriods.state.error
+                : activePeriod
+                  ? `Período ${activePeriod.name ?? "sin dato"}`
+                  : "Sin período activo"}
+          </span>
+        </Link>
       </div>
       <div className="pn-section-heading">
         <div>
@@ -181,30 +442,10 @@ export function Home({
       </div>
       <div className="pn-quick-grid">
         {[
-          [
-            "event_available",
-            "Solicitar un permiso",
-            "Gestiona tu tiempo",
-            "requests/new",
-          ],
-          [
-            "workspace_premium",
-            "Obtener un certificado",
-            "A un clic de distancia",
-            "certificates",
-          ],
-          [
-            "account_tree",
-            "Conocer al equipo",
-            "Conecta con las personas",
-            "org-chart",
-          ],
-          [
-            "auto_awesome",
-            "Preguntarle a Eva",
-            "Estamos para ayudarte",
-            "assistant",
-          ],
+          ["event_available", "Solicitar un permiso", "Gestiona tu tiempo", "requests/new"],
+          ["workspace_premium", "Obtener un certificado", "A un clic de distancia", "certificates"],
+          ["account_tree", "Conocer al equipo", "Conecta con las personas", "org-chart"],
+          ["auto_awesome", "Preguntarle a Eva", "Estamos para ayudarte", "assistant"],
         ].map(([icon, title, desc, path]) => (
           <Link to={"/dashboard/" + path} className="pn-quick" key={path}>
             <span className="quick-icon">
@@ -219,7 +460,56 @@ export function Home({
         ))}
       </div>
       <div className="vivid-home-chart">
-        <PerformanceChart />
+        <section className="pn-panel vivid-chart">
+          <div className="vivid-chart-heading">
+            <div>
+              <span className="pn-eyebrow">TU RESUMEN</span>
+              <h2>Así va tu desempeño</h2>
+            </div>
+            <Icon name="space_dashboard" />
+          </div>
+          {summary.state.status === "error" ? (
+            <SectionError
+              error={summary.state.error ?? "Sin dato"}
+              restricted={summary.state.errorStatus === 403}
+              onRetry={summary.reload}
+            />
+          ) : summary.state.status === "loading" ? (
+            <LoadingNote label="Cargando resumen…" />
+          ) : summary.state.data ? (
+            <>
+              <p className="chart-hint">
+                <Icon name="person" size={14} />{" "}
+                {summary.state.data.fullName ?? name}
+                {summary.state.data.area ? ` · ${summary.state.data.area}` : ""}
+              </p>
+              <div className="metric-detail-comparison">
+                <div>
+                  <span>Indicadores</span>
+                  <strong>{summary.state.data.totalIndicators ?? "Sin dato"}</strong>
+                </div>
+                <div>
+                  <span>Evaluados</span>
+                  <strong>{summary.state.data.completedIndicators ?? "Sin dato"}</strong>
+                </div>
+                <div>
+                  <span>Pendientes</span>
+                  <strong>{summary.state.data.pendingIndicators ?? "Sin dato"}</strong>
+                </div>
+                <div>
+                  <span>Promedio final</span>
+                  <strong>
+                    {summary.state.data.averageFinalResult != null
+                      ? formatMeasure(summary.state.data.averageFinalResult, "%")
+                      : "Sin dato"}
+                  </strong>
+                </div>
+              </div>
+            </>
+          ) : (
+            <LoadingNote label="Sin resumen disponible." />
+          )}
+        </section>
         <section className="vivid-agenda">
           <div className="panel-heading">
             <div>
@@ -228,28 +518,31 @@ export function Home({
             </div>
             <Icon name="calendar_month" />
           </div>
-          <Link to="/dashboard/evaluations">
-            <span className="agenda-date">
-              <strong>05</strong>OCT
-            </span>
-            <div>
-              <span className="agenda-tag">TU DESARROLLO</span>
-              <h3>Un momento para crecer</h3>
-              <p>Tu autoevaluación ya está lista.</p>
-            </div>
-            <Icon name="chevron_right" />
-          </Link>
-          <Link to="/dashboard/requests">
-            <span className="agenda-date yellow">
-              <strong>19</strong>OCT
-            </span>
-            <div>
-              <span className="agenda-tag">BIENESTAR</span>
-              <h3>Tu próximo descanso</h3>
-              <p>5 días para recargar energías.</p>
-            </div>
-            <Icon name="chevron_right" />
-          </Link>
+          {activePeriod ? (
+            (() => {
+              const dateParts = shortDateParts(activePeriod.endDate);
+              return (
+                <Link to="/dashboard/evaluations">
+                  <span className="agenda-date">
+                    <strong>{dateParts?.day ?? "--"}</strong>
+                    {dateParts?.month ?? "··"}
+                  </span>
+                  <div>
+                    <span className="agenda-tag">TU DESARROLLO</span>
+                    <h3>Tu evaluación está abierta</h3>
+                    <p>Período {activePeriod.name ?? "sin dato"}.</p>
+                  </div>
+                  <Icon name="chevron_right" />
+                </Link>
+              );
+            })()
+          ) : evalPeriods.state.status === "loading" ? (
+            <LoadingNote label="Consultando períodos…" />
+          ) : (
+            <p className="pn-info">
+              Sin períodos de evaluación activos por ahora.
+            </p>
+          )}
           <Link className="agenda-cta" to="/dashboard/requests/new">
             <Icon name="add_circle" size={19} /> Planea algo para ti{" "}
             <Icon name="arrow_forward" size={17} />
@@ -261,37 +554,57 @@ export function Home({
           <div className="panel-heading">
             <div>
               <h2>Así van tus objetivos</h2>
-              <p>Cada avance cuenta. Sigue así.</p>
+              <p>
+                {ringPeriod
+                  ? `Indicadores de ${periodLabel(ringPeriod)}.`
+                  : "Cada avance cuenta. Sigue así."}
+              </p>
             </div>
             <Link to="/dashboard/kpis">
               Ver indicadores <Icon name="arrow_forward" size={16} />
             </Link>
           </div>
-          {metrics.slice(0, 3).map((m, i) => (
-            <Link className="objective-row" to="/dashboard/kpis" key={m.name}>
-              <span className={`objective-icon stat-${i}`}>
-                <Icon
-                  name={["sentiment_satisfied", "local_shipping", "groups"][i]}
-                />
-              </span>
-              <div>
-                <strong>{m.name}</strong>
-                <div className="pn-progress">
-                  <i
-                    style={{
-                      width: m.value + "%",
-                      background: i === 1 ? "#FFB71B" : "",
-                    }}
-                  />
+          {analytics.state.status === "loading" ? (
+            <LoadingNote label="Cargando indicadores…" />
+          ) : analytics.state.status === "error" ? (
+            <SectionError
+              error={analytics.state.error ?? "Sin dato"}
+              restricted={analytics.state.errorStatus === 403}
+              onRetry={analytics.reload}
+            />
+          ) : breakdown.length ? (
+            breakdown.map((item, i) => (
+              <Link
+                className="objective-row"
+                to="/dashboard/kpis"
+                key={item.indicatorId ?? `row-${i}`}
+              >
+                <span className={`objective-icon stat-${i % 3}`}>
+                  <Icon name="assessment" />
+                </span>
+                <div>
+                  <strong>{item.label ?? "Indicador sin dato"}</strong>
+                  {item.measurementDirection === "ascendente" &&
+                  item.result != null &&
+                  (item.measurementUnit ?? "%") === "%" ? (
+                    <div className="pn-progress">
+                      <i style={{ width: `${Math.max(0, Math.min(100, item.result))}%` }} />
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-              <span>
-                {m.value}
-                <small>%</small>
-              </span>
-              <Badge>{m.status}</Badge>
-            </Link>
-          ))}
+                <span>
+                  {formatMeasure(item.result, item.measurementUnit)}
+                </span>
+                <Badge>{item.completed ? "Evaluado" : "Pendiente"}</Badge>
+              </Link>
+            ))
+          ) : (
+            <div className="pn-empty">
+              <Icon name="flag" size={30} />
+              <h3>Sin indicadores en este período</h3>
+              <p>Verás tus objetivos aquí cuando tengan datos.</p>
+            </div>
+          )}
         </section>
         <section className="pn-panel">
           <div className="panel-heading">
@@ -306,40 +619,41 @@ export function Home({
               <Icon name="arrow_outward" size={19} />
             </Link>
           </div>
-          {[
-            [
-              "check",
-              "Tus vacaciones están aprobadas",
-              "19 – 23 de octubre · Disfruta tu descanso",
-              "requests",
-            ],
-            [
-              "description",
-              "Un nuevo documento para ti",
-              "Manual de convivencia · Hace 2 horas",
-              "documents/manual",
-            ],
-            [
-              "celebration",
-              "¡Seguimos creciendo juntos!",
-              "Conoce a las personas de tu equipo",
-              "org-chart",
-            ],
-          ].map(([icon, title, desc, path], i) => (
-            <Link
-              className="activity-row"
-              key={title}
-              to={"/dashboard/" + path}
-            >
-              <span className={`activity-icon stat-${i}`}>
-                <Icon name={icon} size={18} />
-              </span>
-              <div>
-                <strong>{title}</strong>
-                <p>{desc}</p>
+          {activities.state.status === "loading" ? (
+            <LoadingNote label="Cargando novedades…" />
+          ) : activities.state.status === "error" ? (
+            <SectionError
+              error={activities.state.error ?? "Sin dato"}
+              restricted={activities.state.errorStatus === 403}
+              onRetry={activities.reload}
+            />
+          ) : (activities.state.data?.length ?? 0) > 0 ? (
+            activities.state.data?.map((activity, i) => (
+              <div
+                className="activity-row"
+                key={`${activity.timestamp ?? ""}-${i}`}
+              >
+                <span className={`activity-icon stat-${i % 3}`}>
+                  <Icon name="notifications" size={18} />
+                </span>
+                <div>
+                  <strong>{activity.title ?? "Sin título"}</strong>
+                  <p>
+                    {activity.description ?? "Sin detalle"}
+                    {activity.timestamp
+                      ? ` · ${activityTimestamp(activity.timestamp)}`
+                      : ""}
+                  </p>
+                </div>
               </div>
-            </Link>
-          ))}
+            ))
+          ) : (
+            <div className="pn-empty">
+              <Icon name="notifications" size={30} />
+              <h3>Sin novedades por ahora</h3>
+              <p>Te avisaremos cuando haya algo nuevo para ti.</p>
+            </div>
+          )}
         </section>
       </div>
       <div className="pn-quote">

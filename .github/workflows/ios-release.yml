@@ -1,0 +1,101 @@
+# Workflow REUTILIZABLE: build nativo iOS + subida a App Store Connect.
+# Consumido por testflight.yml (develop → backend dev) y appstore.yml (main → prod).
+#
+# Requisitos (secrets/vars del repo) — ver DEPLOY.md en la raíz:
+#   secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64, MATCH_GIT_URL,
+#            MATCH_PASSWORD, KEYCHAIN_PASSWORD, APPLE_TEAM_ID
+#   vars:    VITE_API_BASE_URL_TESTFLIGHT, VITE_API_BASE_URL_PRODUCTION
+
+name: ios-release (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "Modo de build de Vite (.env.<mode>)"
+        required: true
+        type: string
+      lane:
+        description: "Lane de fastlane a ejecutar (testflight | appstore)"
+        required: true
+        type: string
+
+jobs:
+  ios:
+    name: iOS → ${{ inputs.lane }}
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      # URL de la API inyectada en build (gana sobre .env.<mode> del repo).
+      VITE_API_BASE_URL: ${{ inputs.mode == 'testflight' && vars.VITE_API_BASE_URL_TESTFLIGHT || vars.VITE_API_BASE_URL_PRODUCTION }}
+      VITE_APP_ENV: ${{ inputs.mode }}
+      LANG: en_US.UTF-8
+      # Fastlane/CI silencioso
+      CI: "true"
+      FASTLANE_SKIP_UPDATE_CHECK: "true"
+      FASTLANE_OPT_OUT_USAGE: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 20 + npm ci
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Instalar dependencias web
+        run: npm ci
+
+      - name: Build web (${{ inputs.mode }})
+        run: npm run build -- --mode ${{ inputs.mode }}
+
+      - name: Generar proyecto iOS si no existe
+        run: |
+          if [ ! -d "ios/App.xcodeproj" ]; then
+            echo "ios/ no está commiteado: generando con cap add ios"
+            npx cap add ios
+          fi
+
+      - name: Sincronizar Capacitor (dist → ios)
+        run: npx cap sync ios
+
+      - name: Ruby + dependencias fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Crear keychain del runner
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain || true
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      - name: fastlane ${{ inputs.lane }}
+        working-directory: ios
+        run: bundle exec fastlane ${{ inputs.lane }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Subir IPA como artefacto (trazabilidad)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peoplenet-${{ inputs.lane }}-build-${{ github.run_number }}
+          path: |
+            build/*.ipa
+            ios/fastlane/report.xml
+          retention-days: 14
+          if-no-files-found: ignore

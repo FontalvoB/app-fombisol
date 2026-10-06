@@ -9,7 +9,8 @@ import {
   useLocation,
 } from "react-router-dom";
 import { Icon, useSaved, Avatar, Brand, Search } from "./shared";
-import { nav, initialRequests } from "./data";
+import { nav } from "./data";
+import { clearAllUserStorage, isAuthenticated, readSession, validateSession } from "../lib/api";
 import { Home } from "./Home";
 import { Login } from "./Login";
 import { Kpis } from "./Kpis";
@@ -27,7 +28,6 @@ export default function Workspace() {
   const reduceMotion = useReducedMotion();
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
-  const [requests, setRequests] = useSaved("requests", initialRequests);
   const [reads, setReads] = useSaved<string[]>("reads", []);
   const [seen, setSeen] = useSaved<string[]>("seen", []);
   const [profile, setProfile] = useSaved("profile", {
@@ -35,7 +35,6 @@ export default function Workspace() {
     email: "alvaro.mendez@peoplenet.com",
     phone: "+57 300 123 4567",
   });
-  const [evaluated, setEvaluated] = useSaved<string[]>("evaluated", []);
   useEffect(() => {
     if (!menu) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -83,6 +82,19 @@ export default function Workspace() {
     const timer = setTimeout(() => setToast(""), 4200);
     return () => clearTimeout(timer);
   }, [toast]);
+  // Ola 0: con sesión almacenada, revalidar identidad contra /auth/me una vez
+  // al montar. Un 401 limpia la sesión y redirige a /login desde el cliente
+  // API; un fallo transitorio (5xx/red) no invalida la sesión local.
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    void validateSession();
+  }, []);
+  // Logout: limpiar sesión y datos demo (pn-v2-*) y navegar con recarga
+  // completa para remontar la app sin heredar estado del usuario anterior.
+  const handleLogout = () => {
+    clearAllUserStorage();
+    window.location.assign("/login");
+  };
   const title =
     nav.find((x) => x[0] && location.pathname.includes(x[0]))?.[2] ||
     (location.pathname.includes("profile")
@@ -94,6 +106,9 @@ export default function Workspace() {
           : "Resumen");
   if (location.pathname === "/") return <Redirect to="/login" />;
   if (location.pathname === "/login") return <Login />;
+  // Guard de sesión (Ola 0): sin sesión autenticada no se pinta NADA privado;
+  // el Redirect evita renderizar el dashboard antes de mover a /login.
+  if (!isAuthenticated()) return <Redirect to="/login" />;
   if (!location.pathname.startsWith("/dashboard"))
     return <Redirect to="/dashboard" />;
   return (
@@ -146,11 +161,6 @@ export default function Workspace() {
             >
               <Icon name={icon} />
               <span>{label}</span>
-              {path === "requests" && (
-                <small>
-                  {requests.filter((x) => x.status === "Pendiente").length}
-                </small>
-              )}
             </Link>
           ))}
         </nav>
@@ -176,14 +186,22 @@ export default function Workspace() {
             className="pn-user"
             onClick={() => history.push("/dashboard/profile")}
           >
-            <Avatar />
+            <Avatar
+              name={(readSession()?.user?.username ?? profile.name ?? "Usuario")
+                .slice(0, 2)
+                .toUpperCase()}
+            />
             <span>
-              <strong>{profile.name}</strong>
-              <small>Gerente de Operaciones</small>
+              <strong>
+                {readSession()?.user?.username ?? profile.name ?? "Usuario"}
+              </strong>
+              <small>
+                {readSession()?.user?.email || "Sesión gestionada por el servidor"}
+              </small>
             </span>
             <Icon name="chevron_right" size={17} />
           </button>
-          <button className="pn-logout" onClick={() => history.push("/login")}>
+          <button className="pn-logout" onClick={handleLogout}>
             <Icon name="logout" size={16} /> Cerrar sesión
           </button>
         </div>
@@ -263,22 +281,16 @@ export default function Workspace() {
         >
           <Switch>
             <Route exact path="/dashboard">
-              <Home requests={requests} reads={reads} name={profile.name} />
+              <Home />
             </Route>
             <Route path="/dashboard/kpis">
               <Kpis notify={setToast} />
             </Route>
             <Route exact path="/dashboard/requests">
-              <Requests requests={requests} />
+              <Requests />
             </Route>
             <Route path="/dashboard/requests/new">
-              <RequestForm
-                onSave={(r) => {
-                  setRequests([r, ...requests]);
-                  setToast("Tu solicitud se envió a María Gómez.");
-                  history.push("/dashboard/requests");
-                }}
-              />
+              <RequestForm />
             </Route>
             <Route exact path="/dashboard/documents">
               <Documents reads={reads} />
@@ -296,16 +308,10 @@ export default function Workspace() {
               <Team />
             </Route>
             <Route exact path="/dashboard/evaluations">
-              <Evaluations evaluated={evaluated} />
+              <Evaluations />
             </Route>
             <Route path="/dashboard/evaluations/chat">
-              <Chat
-                evaluation
-                onComplete={() => {
-                  setEvaluated([...new Set([...evaluated, "self"])]);
-                  setToast("Autoevaluación guardada.");
-                }}
-              />
+              <Chat evaluation />
             </Route>
             <Route path="/dashboard/assistant">
               <Chat />

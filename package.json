@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --mode development",
+    "build:testflight": "tsc && vite build --mode testflight",
+    "build:production": "tsc && vite build --mode production",
     "preview": "vite preview",
     "ionic:build": "npm run build",
     "ionic:serve": "npm run dev"

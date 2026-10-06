@@ -10,4 +10,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      // Igual que el web Angular (proxy.conf.json): /api sin quitar el prefijo
+      // hacia kpis-ms. changeOrigin evita problemas de Host/VirtualHost.
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
 })

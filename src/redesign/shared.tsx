@@ -127,6 +127,41 @@ export function Empty() {
   );
 }
 
+/** Estado de sección con error y retry; 403 → tarjeta "Sección restringida". */
+export function SectionError({
+  error,
+  restricted,
+  onRetry,
+}: {
+  error: string;
+  restricted: boolean;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="pn-empty">
+      <Icon name={restricted ? "lock" : "cloud_off"} size={32} />
+      <h3>
+        {restricted
+          ? "Sección restringida"
+          : "No pudimos cargar esta sección"}
+      </h3>
+      <p>{error}</p>
+      <Button secondary onClick={onRetry}>
+        Reintentar
+      </Button>
+    </div>
+  );
+}
+
+/** Nota de carga/estado accesible. */
+export function LoadingNote({ label }: { label: string }) {
+  return (
+    <p className="pn-info" role="status">
+      {label}
+    </p>
+  );
+}
+
 export function Search({
   value,
   onChange,

@@ -1,0 +1,9 @@
+# Configuración de match (distribución de certificados y perfiles).
+# Requiere un repositorio PRIVADO con los certificados (MATCH_GIT_URL)
+# y la contraseña de cifrado (MATCH_PASSWORD) — ver DEPLOY.md.
+if ENV["MATCH_GIT_URL"]
+  git_url(ENV["MATCH_GIT_URL"])
+  storage_mode("git")
+  type("appstore")
+  # app_identifier se toma del Appfile (com.peoplenet.app)
+end
