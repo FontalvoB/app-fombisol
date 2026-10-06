@@ -39,10 +39,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node 20 + npm ci
+      - name: Node 22 + npm ci
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Instalar dependencias web
