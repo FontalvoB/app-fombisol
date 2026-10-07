@@ -53,8 +53,8 @@ jobs:
 
       - name: Generar proyecto iOS si no existe
         run: |
-          if [ ! -d "ios/App.xcodeproj" ]; then
-            echo "ios/ no está commiteado: generando con cap add ios"
+          if [ ! -d "ios/App/App.xcodeproj" ]; then
+            echo "ios/App/App.xcodeproj no existe: generando con cap add ios"
             npx cap add ios
           fi
 
