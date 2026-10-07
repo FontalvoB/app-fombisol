@@ -23,9 +23,10 @@ on:
         type: string
         default: internal
       version_base:
-        description: "Base del versionCode (debe ser única por workflow; rangos separados evitan colisiones)"
-        required: true
+        description: "Base del versionCode (única; el workflow que lo llama fija un rango por encima de lo ya usado)"
+        required: false
         type: number
+        default: 3000000
 
 jobs:
   android:
