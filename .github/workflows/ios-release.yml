@@ -1,10 +1,12 @@
 # Workflow REUTILIZABLE: build nativo iOS + subida a App Store Connect.
 # Consumido por testflight.yml (develop → backend dev) y appstore.yml (main → prod).
 #
-# Requisitos (secrets/vars del repo) — ver DEPLOY.md en la raíz:
-#   secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64, MATCH_GIT_URL,
-#            MATCH_PASSWORD, KEYCHAIN_PASSWORD, APPLE_TEAM_ID
-#   vars:    VITE_API_BASE_URL_TESTFLIGHT, VITE_API_BASE_URL_PRODUCTION
+# Firma SIN match: Xcode genera/refresca el provisioning profile directamente
+# con la App Store Connect API key (asc_api_key → XCODE_* envs de xcodebuild).
+# Requisito único: ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8_BASE64 secrets +
+# APPLE_TEAM_ID. Sin repo de certificados, sin Apple ID, sin keychain extra.
+#
+# vars:    VITE_API_BASE_URL_TESTFLIGHT / VITE_API_BASE_URL_PRODUCTION
 
 name: ios-release (reusable)
 
@@ -16,7 +18,7 @@ on:
         required: true
         type: string
       lane:
-        description: "Lane de fastlane a ejecutar (testflight | appstore)"
+        description: "Etiqueta del build (testflight | appstore) — sube con altool"
         required: true
         type: string
 
@@ -30,10 +32,12 @@ jobs:
       VITE_API_BASE_URL: ${{ inputs.mode == 'testflight' && vars.VITE_API_BASE_URL_TESTFLIGHT || vars.VITE_API_BASE_URL_PRODUCTION }}
       VITE_APP_ENV: ${{ inputs.mode }}
       LANG: en_US.UTF-8
-      # Fastlane/CI silencioso
       CI: "true"
       FASTLANE_SKIP_UPDATE_CHECK: "true"
       FASTLANE_OPT_OUT_USAGE: "true"
+      # Firma automática vía ASC API key (xcodebuild -allowProvisioningUpdates)
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
 
     steps:
       - name: Checkout
@@ -61,33 +65,69 @@ jobs:
       - name: Sincronizar Capacitor (dist → ios)
         run: npx cap sync ios
 
-      - name: Ruby + dependencias fastlane
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.2"
-          bundler-cache: true
-          working-directory: ios
-
-      - name: Crear keychain del runner
-        run: |
-          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain || true
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-          security set-keychain-settings -lut 21600 build.keychain
-        env:
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-
-      - name: fastlane ${{ inputs.lane }}
+      - name: Materializar API key de App Store Connect
         working-directory: ios
-        run: bundle exec fastlane ${{ inputs.lane }}
-        env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > /tmp/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+          mkdir -p ~/private_keys
+          cp /tmp/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 ~/private_keys/
+
+      - name: Build number monotónico (100 + run number)
+        working-directory: ios/App
+        run: |
+          BUILD_NUMBER=$((100 + ${{ github.run_number }}))
+          echo "Build number: $BUILD_NUMBER"
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Archive (Release, firma automática con API key)
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/PeopleNet.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} \
+            archive
+
+      - name: Export IPA (app-store-connect)
+        working-directory: ios/App
+        run: |
+          cat > build/exportOptions.plist <<'EOPLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOPLIST
+          xcodebuild -exportArchive \
+            -archivePath build/PeopleNet.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist build/exportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}
+
+      - name: Subir a App Store Connect (altool)
+        working-directory: ios/App
+        run: |
+          xcrun altool --upload-package build/ipa/App.ipa \
+            --type ios \
+            --apiKey ${{ secrets.ASC_KEY_ID }} \
+            --apiIssuer ${{ secrets.ASC_ISSUER_ID }}
 
       - name: Subir IPA como artefacto (trazabilidad)
         if: always()
@@ -95,7 +135,6 @@ jobs:
         with:
           name: peoplenet-${{ inputs.lane }}-build-${{ github.run_number }}
           path: |
-            build/*.ipa
-            ios/fastlane/report.xml
+            ios/App/build/ipa/*.ipa
           retention-days: 14
           if-no-files-found: ignore
