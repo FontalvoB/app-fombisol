@@ -124,8 +124,14 @@ jobs:
       - name: Subir a App Store Connect (altool)
         working-directory: ios/App
         run: |
+          SHORT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleShortVersionString" build/PeopleNet.xcarchive/Info.plist)
+          BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleVersion" build/PeopleNet.xcarchive/Info.plist)
           xcrun altool --upload-package build/ipa/App.ipa \
             --type ios \
+            --apple-id ${{ secrets.ASC_APP_ID }} \
+            --bundle-id com.peoplenet.app \
+            --bundle-version "$BUNDLE_VERSION" \
+            --bundle-short-version-string "$SHORT_VERSION" \
             --apiKey ${{ secrets.ASC_KEY_ID }} \
             --apiIssuer ${{ secrets.ASC_ISSUER_ID }}
 
