@@ -25,7 +25,7 @@ on:
 jobs:
   ios:
     name: iOS → ${{ inputs.lane }}
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     env:
       # URL de la API inyectada en build (gana sobre .env.<mode> del repo).
