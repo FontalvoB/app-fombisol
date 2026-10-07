@@ -14,3 +14,9 @@ node_modules
 .next/
 dist/
 .DS_Store
+# Firma de release (no versionar nunca)
+keystore.properties
+*.keystore
+*.jks
+*.password
+play-service-account.json

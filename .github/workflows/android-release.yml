@@ -1,0 +1,113 @@
+# Workflow REUTILIZABLE: build nativo Android (AAB firmado) + subida a Google Play.
+# Consumido por android-internal.yml (develop) y android-prod.yml (main).
+#
+# Autenticación Play: secret GOOGLE_ADC_JSON (ADC authorized_user de gcloud,
+# cuenta propietaria) → el script impersona la SA play-publisher-net@.
+# Firma: secret KEYSTORE_BASE64 + PEOPLENET_STORE_PASSWORD / PEOPLENET_KEY_PASSWORD.
+#
+# La API de configuración del backend NO se inyecta por env: usa .env.<mode>
+# del repo (misma regla que los builds locales).
+
+name: android-release (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "Modo de build de Vite (.env.<mode>)"
+        required: true
+        type: string
+      track:
+        description: "Pista de Google Play destino"
+        required: false
+        type: string
+        default: internal
+
+jobs:
+  android:
+    name: Android → ${{ inputs.track }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      VITE_APP_ENV: ${{ inputs.mode }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22 + npm ci
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependencias web
+        run: npm ci
+
+      - name: Build web (${{ inputs.mode }})
+        run: npm run build -- --mode ${{ inputs.mode }}
+
+      - name: Sincronizar Capacitor (dist → android)
+        run: npx cap sync android
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Componentes SDK (insurance)
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Materializar keystore y firma
+        working-directory: android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.PEOPLENET_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PEOPLENET_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > peoplenet-release.keystore
+          cat > keystore.properties <<EOF
+          storeFile=${{ github.workspace }}/android/peoplenet-release.keystore
+          storePassword=$STORE_PASSWORD
+          keyAlias=peoplenet
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Version code monotónico (100 + run number)
+        run: |
+          VC=$((100 + ${{ github.run_number }}))
+          echo "VERSION_CODE=$VC" >> "$GITHUB_ENV"
+          sed -i "s/^        versionCode .*/        versionCode $VC/" android/app/build.gradle
+          grep "versionCode" android/app/build.gradle | head -1
+
+      - name: Build AAB firmado
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Autenticación Play (ADC)
+        env:
+          GOOGLE_ADC_JSON: ${{ secrets.GOOGLE_ADC_JSON }}
+        run: echo "$GOOGLE_ADC_JSON" > /tmp/adc.json
+
+      - name: Publicar en Google Play (${{ inputs.track }})
+        env:
+          GOOGLE_ADC_FILE: /tmp/adc.json
+        run: |
+          python3 scripts/play_publish.py \
+            --aab android/app/build/outputs/bundle/release/app-release.aab \
+            --version-code "$VERSION_CODE" \
+            --track ${{ inputs.track }}
+
+      - name: Subir AAB como artefacto (trazabilidad)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peoplenet-android-${{ inputs.track }}-build-${{ github.run_number }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 14
+          if-no-files-found: ignore

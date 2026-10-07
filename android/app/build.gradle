@@ -1,4 +1,14 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.github.triplet.play'
+
+// ── Firma de release (PeopleNet) ──────────────────────────────────────────────
+// Lee android/keystore.properties (no versionado). Si no existe, el release
+// queda sin firmar (build local de prueba).
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
 
 android {
     namespace = "com.peoplenet.app"
@@ -7,8 +17,8 @@ android {
         applicationId "com.peoplenet.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +26,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -28,6 +51,20 @@ repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
+}
+
+// ── Google Play Publisher (subida por CLI) ────────────────────────────────────
+// Autenticación SIN clave JSON (org policy bloquea claves de SA):
+// credenciales de usuario (gcloud ADC) impersonando la service account de Play.
+// Requiere:
+//   1. gcloud auth application-default login --impersonate-service-account=<SA>
+//   2. Rol roles/iam.serviceAccountTokenCreator del usuario sobre la SA
+//   3. SA con permisos en Play Console (API access → Conceder acceso)
+play {
+    track = 'internal'
+    defaultToAppBundles = true
+    useApplicationDefaultCredentials = true
+    impersonateServiceAccount = 'play-publisher-net@peoplenet-510915.iam.gserviceaccount.com'
 }
 
 dependencies {

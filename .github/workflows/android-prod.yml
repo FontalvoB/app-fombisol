@@ -1,0 +1,30 @@
+# AUTODESPLIEGUE Android (producción-internal): push a main → AAB firmado → Google Play.
+# main = backend PROD (.env.production). Publica en la pista internal (la única
+# activa); cuando se configure closed/production, cambiar `track` aquí.
+name: android-prod
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "android/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.production"
+      - ".github/workflows/android-release.yml"
+      - ".github/workflows/android-prod.yml"
+      - "scripts/play_publish.py"
+
+concurrency:
+  group: android-prod-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/android-release.yml
+    with:
+      mode: production
+      track: internal
+    secrets: inherit
