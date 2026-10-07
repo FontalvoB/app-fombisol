@@ -456,7 +456,7 @@ function SolicitudDetail({ solicitud }: { solicitud: SolicitudNovedadResponse })
       </dl>
       {(solicitud.documentos?.length ?? 0) > 0 && (
         <>
-          <h4>Soportes adjuntos</h4>
+          <h3>Soportes adjuntos</h3>
           {solicitud.documentos?.map((doc) => (
             <p className="pn-info" key={doc.id ?? doc.nombreArchivo ?? ""}>
               <Icon name="attach_file" size={15} />
@@ -712,7 +712,7 @@ export function RequestForm() {
           <div className="form-section-title">
             <span>01</span>
             <div>
-              <h3>¿Qué tipo de solicitud necesitas?</h3>
+              <h2>¿Qué tipo de solicitud necesitas?</h2>
               <p>Selecciona la opción que mejor se ajuste.</p>
             </div>
           </div>
@@ -775,7 +775,7 @@ export function RequestForm() {
           <div className="form-section-title">
             <span>02</span>
             <div>
-              <h3>Define los detalles</h3>
+              <h2>Define los detalles</h2>
               <p>Las fechas y el contexto ayudan a tu líder a revisar.</p>
             </div>
           </div>
@@ -930,13 +930,13 @@ export function RequestForm() {
         </form>
         <aside className="pn-form-aside">
           <Icon name="info" size={25} />
-          <h3>Ten en cuenta</h3>
+          <h2>Ten en cuenta</h2>
           <p>
             Solicita tus ausencias programadas con anticipación para que tu
             equipo pueda organizarse.
           </p>
           <hr />
-          <h4>Tu responsable de aprobación</h4>
+          <h3>Tu responsable de aprobación</h3>
           {sugerido.state.status === "loading" ? (
             <p>Consultando tu jefe inmediato…</p>
           ) : sugerido.state.data?.id != null ? (

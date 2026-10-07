@@ -55,7 +55,7 @@ export function Login() {
   }
 
   return (
-    <div className="pn-login">
+    <main className="pn-login">
       <section className="pn-login-story">
         <Brand />
         <div className="login-story-copy">
@@ -108,42 +108,42 @@ export function Login() {
           <h2>Qué bueno verte de nuevo.</h2>
           <p>Tu próximo gran día empieza aquí.</p>
           <form onSubmit={handleSubmit}>
-            <label>
+            <label htmlFor="login-username">
               Usuario o correo corporativo
+            </label>
+            <input
+              id="login-username"
+              type="text"
+              placeholder="nombre.usuario"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={submitting}
+              required
+            />
+            <label htmlFor="login-password">Contraseña</label>
+            <div className="password-field">
               <input
-                type="text"
-                placeholder="nombre.usuario"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="login-password"
+                type={show ? "text" : "password"}
+                placeholder="Ingresa tu contraseña"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={submitting}
                 required
               />
-            </label>
-            <label>
-              Contraseña
-              <div className="password-field">
-                <input
-                  type={show ? "text" : "password"}
-                  placeholder="Ingresa tu contraseña"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={submitting}
-                  required
-                />
-                <button
-                  type="button"
-                  aria-label={
-                    show ? "Ocultar contraseña" : "Mostrar contraseña"
-                  }
-                  onClick={() => setShow(!show)}
-                  disabled={submitting}
-                >
-                  <Icon name={show ? "visibility_off" : "visibility"} />
-                </button>
-              </div>
-            </label>
+              <button
+                type="button"
+                aria-label={
+                  show ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                onClick={() => setShow(!show)}
+                disabled={submitting}
+              >
+                <Icon name={show ? "visibility_off" : "visibility"} />
+              </button>
+            </div>
             <div className="login-options">
               <span>Accede con tus credenciales.</span>
               <button type="button" onClick={() => setHelp(!help)}>
@@ -185,6 +185,6 @@ export function Login() {
           © 2026 PeopleNet <span>Conectamos personas y posibilidades.</span>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

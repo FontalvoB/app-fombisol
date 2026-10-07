@@ -666,7 +666,7 @@ function EvaChat() {
         </section>
         <aside className="pn-chat-aside">
           <Icon name="target" size={30} />
-          <h3>Tu perspectiva importa.</h3>
+          <h2>Tu perspectiva importa.</h2>
           <p>
             No hay respuestas perfectas. Piensa en ejemplos de tu día a día.
           </p>
@@ -885,7 +885,7 @@ function NanabotChat() {
         </section>
         <aside className="pn-chat-aside">
           <Icon name="tips_and_updates" size={30} />
-          <h3>¿Por dónde empezamos?</h3>
+          <h2>¿Por dónde empezamos?</h2>
           <p>Ejemplos de consulta real:</p>
           {[
             "¿Cómo van los indicadores del área de Gestión Humana?",
