@@ -21,7 +21,7 @@ jobs:
           echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > /tmp/AuthKey.p8
           python3 - <<'PYEOF'
           import base64, json, os, time, urllib.request, urllib.error, subprocess
-          subprocess.run(["python3", "-m", "pip", "install", "--quiet", "cryptography"], check=True)
+          subprocess.run(["python3", "-m", "pip", "install", "--quiet", "--break-system-packages", "cryptography"], check=True)
 
           kid = os.environ["ASC_KEY_ID"]
           iss = os.environ["ASC_ISSUER_ID"]
