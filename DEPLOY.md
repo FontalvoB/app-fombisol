@@ -9,7 +9,7 @@ avisa cuándo arrancar; ver "Activación paso a paso" al final).
 | Rama | Trigger | Modo de build | Archivo env | Backend | Destino |
 |---|---|---|---|---|---|
 | `develop` | push (src/, ios/, configs) | `testflight` | `.env.testflight` | **DEV** (absoluta, CI var) | **TestFlight** (QA externa) |
-| `main` | push (src/, ios/, configs) | `production` | `.env.production` | **PROD** `https://tech.peoplenet.info/api` | **App Store Connect** (publicación MANUAL) |
+| `main` | push (src/, ios/, configs) | `production` | `.env.production` | **PROD** `https://peoplenet.info/api` | **App Store Connect** (publicación MANUAL) |
 | local | `npm run dev` / `npm run build` | `development` | `.env.development` | `/api` → proxy Vite → `localhost:8080` | — |
 
 Regla de oro: la URL de la API **nunca** se hardcodea en el código — se resuelve en
@@ -28,13 +28,20 @@ Verificado: cada modo inyecta su URL correcta en `dist/assets/index-*.js`.
 ## 2. Workflows (GitHub Actions)
 
 - `.github/workflows/ios-release.yml` — reutilizable (workflow_call): npm ci → build web
-  con mode → `npx cap add ios` (si falta) → `npx cap sync ios` → keychain → fastlane
-  (`testflight` o `appstore`) → artefacto IPA + report.xml.
-- `.github/workflows/testflight.yml` — push a `develop` → lane `testflight`.
-- `.github/workflows/appstore.yml` — push a `main` → lane `appstore` (sin auto-publicar).
+  con mode → `npx cap add ios` (si falta) → `npx cap sync ios` → API key materializada →
+  `agvtool` build number (100 + run_number) → `xcodebuild archive` + `exportArchive`
+  (firma automática con ASC API key, SIN match) → `altool` upload → artefacto IPA.
+  Runner: `macos-26` (Apple exige SDK iOS 26+ / Xcode 26 para subir a ASC).
+- `.github/workflows/testflight.yml` — push a `develop` → build `testflight`.
+- `.github/workflows/appstore.yml` — push a `main` → build `production` (sin auto-publicar).
 
-Fastlane (ios/fastlane/Fastfile): ASC API key autenticación, match para firma,
-build number = `100 + GITHUB_RUN_NUMBER` (monotónico, sin colisiones).
+Firma SIN match (2026-10-07): el provisioning profile lo genera Xcode directamente
+con la App Store Connect API key (`-allowProvisioningUpdates -authenticationKey*`).
+No requiere repo de certificados, Apple ID password ni keychain del equipo.
+El Fastfile de `ios/fastlane/` queda como alternativa manual (requiere match).
+
+Historia 2026-10-07: primer build (v1.0.0 build 1) subido manualmente desde Mac
+local (Xcode 27) con altool → TestFlight VALID (Delivery UUID 2ee72748).
 
 ## 3. Secrets a configurar en GitHub (Settings → Secrets and variables → Actions)
 
@@ -44,37 +51,38 @@ build number = `100 + GITHUB_RUN_NUMBER` (monotónico, sin colisiones).
 | `ASC_KEY_ID` | ID de la API key de App Store Connect | App Store Connect → Users and Access → Integrations → App Store Connect API → Team Keys → generar key (rol **App Manager** mínimo) |
 | `ASC_ISSUER_ID` | Issuer ID (arriba de la lista de keys) | Misma página |
 | `ASC_KEY_P8_BASE64` | Contenido del archivo `.p8` **en base64** | `base64 -i AuthKey_XXXX.p8 \| pbcopy` (mac) o `certutil -encode` (win) |
-| `APPLE_TEAM_ID` | Team ID de Apple Developer | Membership details (ej. `ABC123DEF4`) |
-| `MATCH_GIT_URL` | Repo PRIVADO que alojará certificados (match) | Crear repo vacío privado p. ej. `FontalvoB/apple-certs` y poner su URL |
-| `MATCH_PASSWORD` | Contraseña de cifrado del repo de match | Contraseña larga nueva (guárdala en el gestor del equipo) |
-| `KEYCHAIN_PASSWORD` | Password del keychain temporal del runner macOS | Cualquier valor largo aleatorio (solo CI) |
+| `ASC_APP_ID` | App ID numérico en ASC | ASC → App Details → Apple ID (ej. `6819857478`) |
+| `APPLE_TEAM_ID` | Team ID de Apple Developer | Membership details (ej. `XZSSM34MU6`) |
+
+✅ Configurados 2026-10-07: ASC_KEY_ID (7CHJDBN598 "fombisol-ci"), ASC_ISSUER_ID,
+ASC_KEY_P8_BASE64, ASC_APP_ID (6819857478), APPLE_TEAM_ID.
+
+### Secrets ya NO requeridos (firma sin match)
+~~`MATCH_GIT_URL`, `MATCH_PASSWORD`, `KEYCHAIN_PASSWORD`~~ — el pipeline firma con
+la API key vía xcodebuild; match solo para el flujo manual del Fastfile.
 
 ### Variables (no secretas)
 | Var | Valor | Nota |
 |---|---|---|
-| `VITE_API_BASE_URL_TESTFLIGHT` | URL del backend **DEV** p. ej. `https://dev-api.peoplenet.info/api` | **PENDIENTE**: no existe backend dev desplegado aún; mientras tanto TestFlight apuntará al placeholder (falla visible) |
-| `VITE_API_BASE_URL_PRODUCTION` | `https://tech.peoplenet.info/api` | Backend prod verificado (health UP) |
+| `VITE_API_BASE_URL_TESTFLIGHT` | `https://peoplenet.info/api` | TestFlight apunta a PROD (no existe backend dev desplegado) |
+| `VITE_API_BASE_URL_PRODUCTION` | `https://peoplenet.info/api` | Backend prod verificado 2026-10-07 (cert TLS válido hasta mar 2027) |
 
-## 4. Bloqueadores y pendientes ANTES del primer despliegue
+## 4. Bloqueadores y pendientes
 
-1. **Certificado TLS de producción EXPIRADO** (`tech.peoplenet.info`): `SEC_E_CERT_EXPIRED`.
-   iOS (ATS) rechaza TLS inválido en release. Renovarlo en el host del backend ANTES de
-   publicar a App Store (TestFlight con backend dev no lo padece).
-2. **Backend DEV desplegable**: crear/reutilizar un despliegue de `kpis-ms` (develop) con
-   HTTPS válido y CORS abierto al origen de la app (`app.cors.allowed-origins`).
-   Para Capacitor nativo el "origen" es `capacitor://localhost` (iOS) / `https://localhost`
-   (Android scheme) — o simplemente permitir ambos hosts.
-3. **Proyecto iOS aún no generado** (`ios/` sin App.xcodeproj): el workflow lo genera con
-   `npx cap add ios` en el runner macOS; PERO para registrar el App ID
-   `com.peoplenet.app` en el portal y para `match init` se necesita que exista al menos
-   una vez. Recomendado: primer push a `develop` hace todo (cap add + match readonly
-   fallará si el repo de certs está vacío → ver paso de activación).
-4. **match primera vez**: el repo de certs debe estar INICIALIZADO con certificados
-   válidos: en un Mac con acceso Apple ID → `bundle exec fastlane match init` (o ya está
-   el Matchfile) y `bundle exec fastlane match appstore` (create). Luego CI usa readonly.
-5. **App Store Connect**: crear la app (Bundle ID `com.peoplenet.app`, SKU
-   `peoplenet-mobile`) — el primer `pilot` la crea automáticamente si la API key tiene
-   permisos, pero el App ID hay que registrarlo en el portal de developer.
+1. ~~Certificado TLS de producción expirado~~ ✅ RESUELTO 2026-10-07: el host prod
+   real es `https://peoplenet.info` (cert Let's Encrypt válido hasta 2027-03-18).
+   `tech.peoplenet.info` quedó deprecado (caído + cert expirado).
+2. **CORS del backend prod** ⚠️ PENDIENTE SERVER: el preflight desde
+   `capacitor://localhost` (origen de la app nativa iOS) y `https://localhost`
+   (scheme Android) responde 403. Agregar ambos al allowlist de CORS del server
+   prod (`CORS_ALLOWED_ORIGINS` env o `app.cors.allowed-origins`) y reiniciar.
+   Sin esto, la app nativa NO logra loguearse contra prod.
+3. ~~Proyecto iOS no generado~~ ✅ RESUELTO: `ios/App/App.xcodeproj` commiteado
+   (commit e3bb29b); workflow ya no regenera (check path corregido).
+4. ~~match primera vez~~ ⛔ OBSOLETO: la firma por match fue reemplazada por
+   firma automática con API key (ver §2).
+5. ~~App Store Connect: crear la app~~ ✅ RESUELTO: PeopleNet ya existe
+   (ASC App ID numérico `6819857478`, SKU `peoplenet-ios-001`).
 6. **Android (Play Store)**: fuera de alcance actual (keystore + console pending);
    el flujo sería análogo con lane `android` + `supply`. Documentar cuando se decida.
 
