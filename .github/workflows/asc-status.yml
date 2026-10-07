@@ -41,8 +41,7 @@ jobs:
               ["openssl", "dgst", "-sha256", "-sign", "/tmp/AuthKey.p8"],
               input=sign_input, capture_output=True, check=True,
           ).stdout
-          r = int.from_bytes(der[2:2 + der[1]], "big").to_bytes(32, "big") if der[0] == 0x30 else None
-          # parseo DER: SEQUENCE { INTEGER r, INTEGER s }
+          # parseo DER: SEQUENCE { INTEGER r, INTEGER s } → r||s de 64 bytes
           pos, seq = 0, der
           assert seq[pos] == 0x30
           pos += 2
