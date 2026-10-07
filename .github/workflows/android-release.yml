@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: internal
+      version_base:
+        description: "Base del versionCode (debe ser única por workflow; rangos separados evitan colisiones)"
+        required: true
+        type: number
 
 jobs:
   android:
@@ -78,9 +82,9 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
-      - name: Version code monotónico (100 + run number)
+      - name: Version code monotónico (base + run number)
         run: |
-          VC=$((100 + ${{ github.run_number }}))
+          VC=$(( ${{ inputs.version_base }} + ${{ github.run_number }} ))
           echo "VERSION_CODE=$VC" >> "$GITHUB_ENV"
           sed -i "s/^        versionCode .*/        versionCode $VC/" android/app/build.gradle
           grep "versionCode" android/app/build.gradle | head -1

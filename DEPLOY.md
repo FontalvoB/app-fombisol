@@ -11,6 +11,30 @@ avisa cuándo arrancar; ver "Activación paso a paso" al final).
 | `develop` | push (src/, ios/, configs) | `testflight` | `.env.testflight` | **DEV** (absoluta, CI var) | **TestFlight** (QA externa) |
 | `main` | push (src/, ios/, configs) | `production` | `.env.production` | **PROD** `https://peoplenet.info/api` | **App Store Connect** (publicación MANUAL) |
 | local | `npm run dev` / `npm run build` | `development` | `.env.development` | `/api` → proxy Vite → `localhost:8080` | — |
+| `develop` | push (src/, android/, configs) | `production`* | `.env.production` | **PROD** `https://peoplenet.info/api` | **Google Play — Prueba interna** (auto) |
+| `main` | push (src/, android/, configs) | `production` | `.env.production` | **PROD** `https://peoplenet.info/api` | **Google Play — Prueba interna** (auto) |
+
+*Android develop usa `production` temporalmente: no hay backend DEV desplegado y
+un build con backend placeholder rompería la app instalada. Cuando exista, cambiar
+`mode: testflight` en `.github/workflows/android-internal.yml`.
+
+## 1b. Android (Google Play) — pipeline
+
+- `.github/workflows/android-release.yml` — reusable: npm ci → build web → cap sync →
+  firma (keystore de secrets) → versionCode = `100 + run_number` → `bundleRelease` →
+  `scripts/play_publish.py` (REST puro, impersonación ADC de la SA
+  `play-publisher-net@peoplenet-510915.iam.gserviceaccount.com`) → pista interna.
+- `.github/workflows/android-internal.yml` — push a `develop` → pista internal.
+- `.github/workflows/android-prod.yml` — push a `main` → pista internal.
+- Publicación de prueba interna: instantánea, sin revisión de Google.
+- Notas de release: `android/app/src/main/play/release-notes/{es-419,en-US}/internal.txt`.
+- Detalle técnico: `docs/PLAY-CLI-DEPLOY.md`.
+- Secrets Android (GitHub): `KEYSTORE_BASE64`, `PEOPLENET_STORE_PASSWORD`,
+  `PEOPLENET_KEY_PASSWORD`, `GOOGLE_ADC_JSON` (ADC authorized_user con refresh token
+  de la cuenta propietaria — revocable con `gcloud auth application-default revoke`).
+- Regla de versionCode: rangos por workflow — main `1.000.000 + run_number`,
+  develop `2.000.000 + run_number` (monotónicos, sin colisiones). Builds locales:
+  bump manual por encima del último code usado en Play.
 
 Regla de oro: la URL de la API **nunca** se hardcodea en el código — se resuelve en
 `src/lib/config.ts` con prioridad: variable de CI > `.env.[mode]` > fallback `/api`.

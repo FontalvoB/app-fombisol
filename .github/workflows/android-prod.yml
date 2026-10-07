@@ -27,4 +27,5 @@ jobs:
     with:
       mode: production
       track: internal
+      version_base: 1000000
     secrets: inherit
