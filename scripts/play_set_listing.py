@@ -102,21 +102,18 @@ class PlayApi:
                 raise RuntimeError(f"{method} {path} → {e.code}: {raw[:200]}")
 
     def image_upload(self, eid, lang, image_type, path):
-        """POST multipart directo: /edits/{eid}/listings/{lang}/images/{imageType}."""
-        boundary = uuid.uuid4().hex
+        """POST media-upload: /edits/{eid}/listings/{lang}/{imageType}?uploadType=media."""
+        mime = "image/png" if path.endswith(".png") else "image/jpeg"
         data = open(path, "rb").read()
-        body = (f"--{boundary}\r\n"
-                f'Content-Disposition: form-data; name="image"; filename="{os.path.basename(path)}"\r\n'
-                f"Content-Type: application/octet-stream\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
         req = urllib.request.Request(
-            f"{UPLOAD_BASE}/{APP_ID}/edits/{eid}/listings/{lang}/{image_type}",
-            data=body, method="POST",
+            f"{UPLOAD_BASE}/{APP_ID}/edits/{eid}/listings/{lang}/{image_type}?uploadType=media",
+            data=data, method="POST",
             headers={"Authorization": f"Bearer {self.token}",
-                     "Content-Type": f"multipart/form-data; boundary={boundary}"})
+                     "Content-Type": mime})
         try:
             resp = urllib.request.urlopen(req)
             result = json.load(resp)
-            print(f"    ✓ {os.path.basename(path)} ({len(data)//1024} KB) id={result.get('id', '?')[:12]}")
+            print(f"    ✓ {os.path.basename(path)} ({len(data)//1024} KB) id={result.get('image', {}).get('id', '?')[:12]}")
             return result
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"image_upload {os.path.basename(path)} → {e.code}: {e.read().decode()[:200]}")
