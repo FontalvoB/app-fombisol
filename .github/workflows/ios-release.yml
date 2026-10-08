@@ -70,9 +70,9 @@ jobs:
           PROFILE_B64: ${{ secrets.APPLE_DIST_PROFILE_BASE64 }}
         run: |
           echo "$PROFILE_B64" | base64 --decode > /tmp/com.peoplenet.app-appstore.mobileprovision
-          mkdir -p ~/Library/Developer/Xcode/UserData/"Provisioning Profiles"
+          # Solo MobileDevice (ruta "manual"): si también está en UserData,
+          # Xcode lo trata como managed y exportArchive manual falla.
           mkdir -p ~/Library/MobileDevice/"Provisioning Profiles"
-          cp /tmp/com.peoplenet.app-appstore.mobileprovision ~/Library/Developer/Xcode/UserData/"Provisioning Profiles"/
           cp /tmp/com.peoplenet.app-appstore.mobileprovision ~/Library/MobileDevice/"Provisioning Profiles"/
           security cms -D -i /tmp/com.peoplenet.app-appstore.mobileprovision | grep -E "<key>Name|ExpirationDate" -A1 | head -4
 
