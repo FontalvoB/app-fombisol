@@ -159,11 +159,13 @@ platform :ios do
     submit = options[:submit_for_review] == true
     UI.message("cwd=#{Dir.pwd}")
 
-    # Age rating (idempotente): sin esto la versión queda 'not in valid state'
-    rating_path = "./metadata/age_rating.json"
-    rating_path = "../fastlane/metadata/age_rating.json" unless File.exist?(rating_path)
-    rating_path = "fastlane/metadata/age_rating.json" unless File.exist?(rating_path)
-    UI.user_error!("age_rating.json no encontrado en ninguna ruta conocida") unless File.exist?(rating_path)
+    # Age rating (idempotente): sin esto la versión queda 'not in valid state'.
+    # IMPORTANTÍSIMO: fastlane hace Dir.chdir al root del proyecto durante la
+    # verificación de opciones del action → SIEMPRE pasar ruta absoluta.
+    rating_path = ["/metadata/age_rating.json", "../fastlane/metadata/age_rating.json",
+                   "fastlane/metadata/age_rating.json"]
+                   .map { |p| File.expand_path(p, Dir.pwd) }.find { |p| File.exist?(p) }
+    UI.user_error!("age_rating.json no encontrado en ninguna ruta conocida") unless rating_path
     UI.message("Age rating config: #{rating_path}")
     update_app_age_rating(
       api_key: api_key,
