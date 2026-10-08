@@ -109,7 +109,7 @@ class PlayApi:
                 f'Content-Disposition: form-data; name="image"; filename="{os.path.basename(path)}"\r\n'
                 f"Content-Type: application/octet-stream\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
         req = urllib.request.Request(
-            f"{UPLOAD_BASE}/{APP_ID}/edits/{eid}/listings/{lang}/images/{image_type}",
+            f"{UPLOAD_BASE}/{APP_ID}/edits/{eid}/listings/{lang}/{image_type}",
             data=body, method="POST",
             headers={"Authorization": f"Bearer {self.token}",
                      "Content-Type": f"multipart/form-data; boundary={boundary}"})
