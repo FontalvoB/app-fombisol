@@ -15,11 +15,13 @@ Flujo: edits.insert → listings.update (textos) → listingsImages (2 fases por
 imagen) → commit. Alternaba con el AAB de android-prod: el listing es global
 (no depende de una versión).
 """
+import argparse
 import base64
 import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 
