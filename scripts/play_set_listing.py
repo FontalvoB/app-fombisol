@@ -101,33 +101,23 @@ class PlayApi:
             except json.JSONDecodeError:
                 raise RuntimeError(f"{method} {path} → {e.code}: {raw[:200]}")
 
-    def image_init(self, edit_id, lang, image_type):
-        """Devuelve la upload URL para una imagen del listing (2 fases)."""
-        url = (f"{BASE}/{APP_ID}/edits/{edit_id}/listings/{lang}/listingsImages/{image_type}")
-        req = urllib.request.Request(
-            url, data=b"{}", method="POST",
-            headers={"Authorization": f"Bearer {self.token}",
-                     "Content-Type": "application/json"})
-        try:
-            return json.load(urllib.request.urlopen(req))["uploadUrl"]
-        except urllib.error.HTTPError as e:
-            raise RuntimeError(f"image_init {image_type} [{lang}] → {e.code}: {e.read().decode()[:200]}")
-
-    def image_upload(self, upload_url, path):
-        """POST multipart/form-data del binario a la upload URL de la fase 1."""
+    def image_upload(self, eid, lang, image_type, path):
+        """POST multipart directo: /edits/{eid}/listings/{lang}/images/{imageType}."""
         boundary = uuid.uuid4().hex
         data = open(path, "rb").read()
         body = (f"--{boundary}\r\n"
-                f'Content-Disposition: form-data; name="file"; filename="{os.path.basename(path)}"\r\n'
-                f"Content-Type: application/jpeg\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
+                f'Content-Disposition: form-data; name="image"; filename="{os.path.basename(path)}"\r\n'
+                f"Content-Type: application/octet-stream\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
         req = urllib.request.Request(
-            upload_url, data=body, method="POST",
+            f"{UPLOAD_BASE}/{APP_ID}/edits/{eid}/listings/{lang}/images/{image_type}",
+            data=body, method="POST",
             headers={"Authorization": f"Bearer {self.token}",
                      "Content-Type": f"multipart/form-data; boundary={boundary}"})
         try:
             resp = urllib.request.urlopen(req)
-            print(f"    ✓ {os.path.basename(path)} ({len(data)//1024} KB)")
-            return resp.status
+            result = json.load(resp)
+            print(f"    ✓ {os.path.basename(path)} ({len(data)//1024} KB) id={result.get('id', '?')[:12]}")
+            return result
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"image_upload {os.path.basename(path)} → {e.code}: {e.read().decode()[:200]}")
 
@@ -200,15 +190,13 @@ def main():
         shared = [("icon", (icon, "image/png")), ("featureGraphic", (feature, "image/jpeg"))]
         for lang in LANGS:
             # Imágenes globales (icon + feature): un upload por tipo e idioma
-            for img_type, (path, mime) in shared:
-                up = api.image_init(eid, lang, img_type)
-                api.image_upload(up, path)
+            for img_type, path in shared:
+                api.image_upload(eid, lang, img_type, path)
                 print(f"✓ {img_type} [{lang}]")
 
             if screens:
-                up = api.image_init(eid, lang, "phoneScreenshots")
                 for path in screens:
-                    api.image_upload(up, path)
+                    api.image_upload(eid, lang, "phoneScreenshots", path)
                 print(f"✓ phoneScreenshots [{lang}] × {len(screens)}")
 
         api.call("POST", f"/edits/{eid}:commit", ok_empty=True)
