@@ -163,6 +163,7 @@ platform :ios do
       app_version: "1.0",
       build_number: options[:build_number] ? options[:build_number].to_s : nil,
       metadata_path: "./metadata",
+      screenshots_path: "./metadata/screenshots",
       skip_metadata: false,
       skip_screenshots: false,
       submit_for_review: submit,
