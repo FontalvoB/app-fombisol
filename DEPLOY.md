@@ -55,17 +55,23 @@ Verificado: cada modo inyecta su URL correcta en `dist/assets/index-*.js`.
 ## 2. Workflows (GitHub Actions)
 
 - `.github/workflows/ios-release.yml` — reutilizable (workflow_call): npm ci → build web
-  con mode → `npx cap add ios` (si falta) → `npx cap sync ios` → API key materializada →
-  `agvtool` build number (100 + run_number) → `xcodebuild archive` + `exportArchive`
-  (firma automática con ASC API key, SIN match) → `altool` upload → artefacto IPA.
+  con mode → `npx cap add ios` (si falta) → `npx cap sync ios` → perfil + cert en llavero
+  efímero → API key materializada → `agvtool` build number (100 + run_number) →
+  `xcodebuild archive` (CODE_SIGNING_ALLOWED=NO) → `exportArchive` (firma automática con
+  ASC API key — el perfil es Xcode-managed) → `altool` upload → artefacto IPA.
   Runner: `macos-26` (Apple exige SDK iOS 26+ / Xcode 26 para subir a ASC).
 - `.github/workflows/testflight.yml` — push a `develop` → build `testflight`.
 - `.github/workflows/appstore.yml` — push a `main` → build `production` (sin auto-publicar).
+- `.github/workflows/appstore-submit.yml` — manual: envía v1.0 a revisión (fastlane deliver).
 
-Firma SIN match (2026-10-07): el provisioning profile lo genera Xcode directamente
-con la App Store Connect API key (`-allowProvisioningUpdates -authenticationKey*`).
-No requiere repo de certificados, Apple ID password ni keychain del equipo.
-El Fastfile de `ios/fastlane/` queda como alternativa manual (requiere match).
+Firma (rediseño 2026-10-08): la firma automática ORIGINAL mintía certificados nuevos por
+run y Apple los rechazó (límite agotado: "current Development certificate or a pending
+certificate request"). Ahora es determinística: secrets `APPLE_DIST_P12_BASE64` +
+`APPLE_DIST_P12_PASSWORD` (Apple Distribution 5C50BFA6, team XZSSM34MU6) y
+`APPLE_DIST_PROFILE_BASE64` (perfil App Store de com.peoplenet.app, expira 2027-10-02).
+Llavero efímero en el runner + archive sin firmar + export automático con API key.
+Cero certificados creados por run.
+✔ Pipeline verde: **v1.0 build 116 subido a ASC el 2026-10-08** (run 37827671173).
 
 Historia 2026-10-07: primer build (v1.0.0 build 1) subido manualmente desde Mac
 local (Xcode 27) con altool → TestFlight VALID (Delivery UUID 2ee72748).

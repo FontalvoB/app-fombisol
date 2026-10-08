@@ -28,15 +28,15 @@
 
 ## Flujo de envío (orden exacto)
 
-1. **Pendiente 1–3:** escribir credenciales demo + contacto + URL privacy en los `.txt` de `fastlane/metadata/` y hacer commit/push a la rama de release.
-2. **Build nuevo en ASC:** push a `main` → workflow `appstore` sube el build `100+run_number` (v1.0, backend PROD). Verificar en ASC → TestFlight & Builds que el build esté **Ready to Submit** (procesamiento 10–30 min).
-3. **Screenshots:** capturar según guion → copiar a `fastlane/metadata/screenshots/{es-419,en-US}/` → commit/push.
+1. **Pendiente 1–3:** escribir credenciales demo + contacto + URL privacy en los `.txt` de `fastlane/metadata/` y hacer commit/push a la rama actual (develop o main).
+2. **Build en ASC:** ✅ HECHO 2026-10-08 — **v1.0 build 116** subido por CI (run 37827671173), backend PROD. Verificar en ASC → TestFlight & Builds que esté **Ready to Submit** (procesamiento 10–30 min; si Apple lo invalida, revisar/issues).
+3. **Screenshots:** capturar según guion (idealmente desde build 116 en TestFlight para mostrar el UI nuevo) → copiar a `fastlane/metadata/screenshots/{es-419,en-US}/` → commit/push.
 4. **One-time en ASC (manual, 5 min):**
    - **Age rating** → contestar todas las secciones "None/No" → resultado **4+**.
    - **App Privacy** → declaraciones abajo.
 5. **Enviar a revisión:** GitHub Actions → `appstore-submit` → Run workflow:
    - `submit_for_review: false` (opcional: dry-run — sube metadata, valida, no envía)
-   - `submit_for_review: true` + `build_number: <el del paso 2>` → **envía a revisión**.
+   - `submit_for_review: true` + `build_number: 116` → **envía a revisión**.
 6. **Monitoreo:** Apple responde típicamente en 24–48 h. Estado en ASC → Distribución → versión 1.0. Rechazo → corregir y re-correr paso 5 con build nuevo si aplica.
 7. **Publicación:** aprobada → ASC → "Publicar esta versión manualmente" (coordinar con el equipo; `automatic_release: false`).
 
