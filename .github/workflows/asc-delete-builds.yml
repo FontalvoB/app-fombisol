@@ -79,7 +79,16 @@ jobs:
               if str(a["version"]) != keep:
                   to_delete.append(b["id"])
           print(f"\nConservar: {keep}. Eliminar: {len(to_delete)} builds.")
+          blocked = []
           for bid in to_delete:
               st, body = call(f"{base}/builds/{bid}", "DELETE")
-              print(f"DELETE {bid}: HTTP {st} {body[:120] if st != 200 else 'OK (eliminado)'}")
+              ok = st == 200
+              print(f"DELETE {bid}: HTTP {st} {body[:200] if not ok else 'OK (eliminado)'}")
+              if not ok:
+                  # Apple ya no permite DELETE de builds por API: expirarlos es manual.
+                  blocked.append(bid)
+          if blocked:
+              print(f"\n⚠ Apple bloquea DELETE ({len(blocked)} builds). Expirarlos MANUAL en:")
+              print("  ASC → PeopleNet → TestFlight → Builds → botón ✦/🚫 'Expire build'")
+              print("  (o déjalos: cada build expira solo a los 90 días de su subida)")
           PYEOF
