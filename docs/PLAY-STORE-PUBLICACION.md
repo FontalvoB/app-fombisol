@@ -19,10 +19,14 @@ personales creadas después del 13-nov-2023).
 | `targetSdk 36` / `compileSdk 36` / `minSdk 24` | ✅ cumple requisito API 36 vigente desde 31-ago-2026 para apps nuevas |
 | Permisos | ✅ solo `INTERNET` (mínimo posible, cero fricción en review) |
 | CORS prod para origen nativo `https://localhost` | ✅ responde ACAO correcto (verificado 08-oct) |
-| **Política de privacidad en URL real** | ⏳ **PENDIENTE (en progreso por el equipo)** |
-| **Store listing completo** (short/full description, icono 512, feature graphic, 2+ screenshots) | ❌ pendiente |
-| **App content** (Data safety, Content rating, Anuncios, Público objetivo, Sign-in details) | ❌ pendiente |
-| Access Review (cuenta demo para revisores de Google) | ❌ pendiente |
+| **Política de privacidad en URL real** | ✅ HECHO (Google Docs pública, verificada 2026-10-08) — agregar la URL en Play Console → App content |
+| **Store listing completo** (short/full description, icono 512, feature graphic, 2+ screenshots) | ✅ HECHO por API 2026-10-08 (`play-listing.yml`): textos es-419/en-US, icon 512, feature graphic, 5 screenshots ×2 idiomas. Nombre unificado "PeopleNet" |
+| **App content** (Data safety, Content rating, Anuncios, Público objetivo, Sign-in details) | ❌ pendiente — MANUAL en consola (respuestas en §4; ~10 min) |
+| Access Review (cuenta demo para revisores de Google) | ❌ pendiente (misma credencial que iOS) |
+
+Después de completar App content: **envío a revisión** con `android-prod.yml`
+(status=draft → draft queda en consola → "Enviar para revisión") o ya con
+draft existente, directo desde la consola.
 
 ## 2. Infra nueva en el repo (esta iteración)
 

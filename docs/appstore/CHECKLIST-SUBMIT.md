@@ -7,11 +7,23 @@
 | # | Pendiente | Dónde | Estado |
 |---|-----------|-------|--------|
 | 1 | **Cuenta demo para App Review** (usuario + contraseña con datos de ejemplo) | `fastlane/metadata/review_information/demo_user.txt` y `demo_password.txt` | ⛔ PENDIENTE |
-| 2 | **URL de Política de Privacidad real** | `fastlane/metadata/es-419/privacy_url.txt` y `en-US/` | ⛔ PENDIENTE (contenidos listos en `docs/appstore/privacy-policy-es|en.html`) |
-| 3 | **Email + teléfono de contacto de App Review** | `fastlane/metadata/review_information/email_address.txt`, `phone_number.txt` | ⛔ PENDIENTE |
-| 4 | **Screenshots 1290×2796 (mín. 4)** | `fastlane/metadata/screenshots/es-419/` + copiar a `en-US/` | ⛔ PENDIENTE (guion en `docs/appstore/SCREENSHOTS.md`) |
-| 5 | **Age rating** (solo una vez, en ASC) | ASC → versión 1.0 → Calificación | ⛔ PENDIENTE (respuestas abajo → 4+) |
-| 6 | **App Privacy / etiquetas de privacidad** (solo una vez, en ASC) | ASC → App Privacy | ⛔ PENDIENTE (valores abajo) |
+| 2 | ~~URL de Política de Privacidad~~ | metadata privacy_url.txt | ✅ HECHO (Google Docs, verificada pública 2026-10-08) |
+| 3 | ~~Email + teléfono de contacto de App Review~~ | review_information | ✅ HECHO (gerencia@fyatech.com / +573053924819) |
+| 4 | ~~Screenshots 1290×2796 (5)~~ | `fastlane/screenshots/es-MX/` | ✅ HECHO — subidos a ASC por deliver (dry-run verde) |
+| 5 | ~~Age rating~~ | `fastlane/metadata/age_rating.json` (4+, todo NONE) | ✅ HECHO — seteado por API idempotente en cada submit |
+| 6 | **App Privacy / etiquetas de privacidad** (App-level, única vez) | ASC → App Privacy | ⛔ PENDIENTE — 5 min en consola (valores abajo); la API no lo cubre |
+| 7 | **Localización en-US iOS** | `fastlane/metadata-reservado/en-US-pendiente-nombre/` | ⛔ PENDIENTE — nombre "PeopleNet" reservado por otra app en en-US; definir nombre inglés distinto y crear la localización una vez en consola (v1 solo es-MX ✓) |
+
+## One-time manual en ASC (5 min) — pendiente #6
+
+ASC → PeopleNet → App Privacy:
+- Data collection → **Yes**.
+- Identifiers → User ID: App Functionality, Linked, No tracking.
+- Contact Info → Email Address: App Functionality, Linked, No tracking.
+- User Content → Other User Content: App Functionality, Linked, No tracking.
+- Data Used to Track You: ninguna. Third-party SDKs: ninguno.
+
+Al terminar: correr de nuevo `appstore-submit` (submit_for_review=true, build 116).
 
 ## Ya resuelto ✅
 
