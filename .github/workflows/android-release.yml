@@ -102,7 +102,7 @@ jobs:
       - name: Autenticación Play (ADC)
         env:
           GOOGLE_ADC_JSON: ${{ secrets.GOOGLE_ADC_JSON }}
-        run: echo "$GOOGLE_ADC_JSON" > /tmp/adc.json
+        run: echo "$GOOGLE_ADC_JSON" | base64 --decode > /tmp/adc.json
 
       - name: Publicar en Google Play (${{ inputs.track }})
         env:
