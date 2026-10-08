@@ -179,7 +179,7 @@ def main():
         api = PlayApi(token)
         edit = api.call("POST", "/edits")
         try:
-            cur = api.call("GET", "/listings", ok_empty=True)
+            cur = api.call("GET", f"/edits/{edit['id']}/listings", ok_empty=True)
             for l in cur.get("listings", []):
                 print(f"  listing [{l.get('language')}]: {l.get('title')}")
         finally:
