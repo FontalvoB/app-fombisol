@@ -9,17 +9,26 @@ export function Evaluations({ evaluated }: { evaluated: string[] }) {
     <>
       <Heading
         eyebrow="CRECER EMPIEZA POR CONOCERTE"
-        title="Tu desarrollo, en primer plano."
+        title="Tu evaluación trimestral"
         description="Haz una pausa, reconoce tus logros y descubre nuevas oportunidades."
       />
-      <section className="pn-evaluation-hero">
+      <section className="pn-evaluation-hero human-evaluation-hero">
         <div>
           <span className="pn-eyebrow">CICLO OCTUBRE — DICIEMBRE 2026</span>
           <h2>
-            Una conversación contigo.
+            Haz una pausa.
             <br />
-            Un paso hacia tu mejor versión.
+            Mira cuánto has crecido.
           </h2>
+          <span className="human-inline-status">
+            <Icon
+              name={evaluated.includes("self") ? "check_circle" : "assignment"}
+              size={17}
+            />
+            {evaluated.includes("self")
+              ? "Autoevaluación completada"
+              : "Autoevaluación pendiente"}
+          </span>
           <p>
             Eva te acompaña en una autoevaluación sencilla.
             <br />
@@ -27,22 +36,22 @@ export function Evaluations({ evaluated }: { evaluated: string[] }) {
           </p>
           <Link className="pn-button" to="/dashboard/evaluations/chat">
             {evaluated.includes("self")
-              ? "Revisar una nueva autoevaluación"
-              : "Comenzar mi autoevaluación"}
+              ? "Volver a realizar evaluación"
+              : "Iniciar evaluación"}
             <Icon name="arrow_forward" size={18} />
           </Link>
           <span className="evaluation-duration">
-            <Icon name="schedule" size={16} /> Aproximadamente 5 minutos
+            <Icon name="schedule" size={16} /> 3 preguntas · Aproximadamente 5
+            minutos
           </span>
         </div>
-        <div className="evaluation-art">
-          <Icon name="target" size={120} />
-          <span>
-            Tu próximo nivel
-            <br />
-            empieza aquí.
-          </span>
-        </div>
+        <img
+          className="human-reflection-photo"
+          src="/images/people/reflection.jpg"
+          alt="Una profesional dedicando un momento a reflexionar y escribir"
+          width="1536"
+          height="1024"
+        />
       </section>
       {result.length === 3 && (
         <section className="pn-panel evaluation-result">

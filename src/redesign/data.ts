@@ -57,6 +57,7 @@ export type RequestItem = (typeof initialRequests)[number];
 export const docs = [
   {
     id: "manual",
+    image: "convivencia",
     title: "Manual de convivencia",
     category: "Talento humano",
     date: "02 oct 2026",
@@ -65,6 +66,7 @@ export const docs = [
   },
   {
     id: "bienestar",
+    image: "bienestar-activo",
     title: "Programa de bienestar 2026",
     category: "Bienestar",
     date: "30 sep 2026",
@@ -73,6 +75,7 @@ export const docs = [
   },
   {
     id: "permisos",
+    image: "vacaciones",
     title: "Política de permisos y vacaciones",
     category: "Talento humano",
     date: "28 sep 2026",
@@ -81,6 +84,7 @@ export const docs = [
   },
   {
     id: "seguridad",
+    image: "seguridad-digital",
     title: "Seguridad de la información",
     category: "Tecnología",
     date: "25 sep 2026",
@@ -89,6 +93,7 @@ export const docs = [
   },
   {
     id: "estrategia",
+    image: "estrategia",
     title: "Nuestro plan estratégico",
     category: "Corporativo",
     date: "20 sep 2026",
@@ -97,6 +102,7 @@ export const docs = [
   },
   {
     id: "etica",
+    image: "integridad",
     title: "Código de ética y conducta",
     category: "Corporativo",
     date: "15 sep 2026",

@@ -69,21 +69,14 @@ export function Certificates({ name }: { name: string }) {
           </Button>
         </form>
         <aside className="pn-form-aside">
-          <div className="vivid-certificate-art" aria-hidden="true">
-            <div>
-              <span>PEOPLENET</span>
-              <strong>
-                Tu talento
-                <br />
-                tiene respaldo.
-              </strong>
-              <i />
-              <i />
-              <i />
-              <Icon name="workspace_premium" size={42} />
-              <small>DOCUMENTO DEMO</small>
-            </div>
-          </div>
+          <img
+            className="editorial-certificate-photo"
+            src="/images/people/trayectoria.jpg"
+            alt="Una profesional de talento humano entrega una carpeta a un colaborador"
+            width="1536"
+            height="1024"
+            loading="lazy"
+          />
           <Icon name="workspace_premium" size={32} />
           <h3>Listo cuando lo necesitas.</h3>
           <p>

@@ -263,7 +263,12 @@ export default function Workspace() {
         >
           <Switch>
             <Route exact path="/dashboard">
-              <Home requests={requests} reads={reads} name={profile.name} />
+              <Home
+                requests={requests}
+                reads={reads}
+                name={profile.name}
+                evaluationComplete={evaluated.includes("self")}
+              />
             </Route>
             <Route path="/dashboard/kpis">
               <Kpis notify={setToast} />

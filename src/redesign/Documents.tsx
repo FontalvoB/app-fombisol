@@ -29,16 +29,16 @@ export function Documents({ reads }: { reads: string[] }) {
         title="Tu biblioteca de documentos"
         description="Información útil, políticas claras y todo lo que necesitas conocer."
       />
-      <Link className="vivid-featured-doc" to="/dashboard/documents/manual">
-        <div className="featured-book">
-          <Icon name="spa" size={38} />
-          <span>
-            Así somos.
-            <br />
-            <strong>Así crecemos.</strong>
-          </span>
-          <small>PEOPLENET</small>
-        </div>
+      <Link
+        className="editorial-library-feature"
+        to="/dashboard/documents/manual"
+      >
+        <img
+          src="/images/people/convivencia.jpg"
+          alt=""
+          width="1536"
+          height="1024"
+        />
         <div>
           <span className="pn-eyebrow">TU PRÓXIMA LECTURA</span>
           <h2>
@@ -48,10 +48,9 @@ export function Documents({ reads }: { reads: string[] }) {
           </h2>
           <p>Conoce nuestro manual de convivencia.</p>
           <span className="featured-read">
-            Descubrir <Icon name="arrow_forward" size={18} />
+            Leer el manual <Icon name="arrow_forward" size={18} />
           </span>
         </div>
-        <i className="featured-orbit" />
       </Link>
       <div className="pn-banner library-progress">
         <span className="quick-icon">
@@ -86,21 +85,25 @@ export function Documents({ reads }: { reads: string[] }) {
           placeholder="Buscar documentos…"
         />
       </div>
-      <div className="pn-doc-grid">
-        {list.map((d, i) => (
+      <div className="pn-doc-grid editorial-doc-grid">
+        {list.map((d) => (
           <Link
-            className="pn-panel document-card"
+            className="pn-panel document-card editorial-doc-card"
             key={d.id}
             to={"/dashboard/documents/" + d.id}
           >
-            <div className={`document-cover cover-${i % 3}`}>
-              <div className="doc-lines">
-                <i />
-                <i />
-                <i />
-              </div>
-              <Icon name={d.icon} size={46} />
-              <span>PEOPLENET / BIBLIOTECA</span>
+            <div className="editorial-doc-cover">
+              <img
+                src={`/images/people/${d.image}.jpg`}
+                alt=""
+                width="1536"
+                height="1024"
+                loading="lazy"
+                decoding="async"
+              />
+              <span className="editorial-doc-icon">
+                <Icon name={d.icon} size={22} />
+              </span>
             </div>
             <div className="document-card-body">
               <div className="panel-heading">
@@ -199,6 +202,13 @@ export function Reader({
             <span>DOCUMENTO INTERNO</span>
           </div>
           <h1>{d.title}</h1>
+          <img
+            className="editorial-reader-photo"
+            src={`/images/people/${d.image}.jpg`}
+            alt=""
+            width="1536"
+            height="1024"
+          />
           <p className="paper-intro">
             Una guía para seguir construyendo un mejor lugar para todos.
           </p>

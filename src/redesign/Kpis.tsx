@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Icon, Button, Badge, Heading, Tabs, download, Modal } from "./shared";
 import { metrics } from "./data";
 import { PerformanceChart, ProgressRing, Sparkline } from "./Charts";
@@ -55,6 +56,22 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
           <option>Septiembre 2026</option>
         </select>
       </div>
+      <Link className="editorial-strategy" to="/dashboard/documents/estrategia">
+        <img
+          src="/images/people/estrategia.jpg"
+          alt=""
+          width="1536"
+          height="1024"
+        />
+        <div>
+          <span className="human-eyebrow">CADA META TIENE UN PROPÓSITO</span>
+          <h2>Tu aporte nos lleva más lejos.</h2>
+          <p>Descubre cómo tus objetivos conectan con nuestro plan.</p>
+          <span className="editorial-strategy-link">
+            Explorar la estrategia <Icon name="arrow_forward" size={17} />
+          </span>
+        </div>
+      </Link>
       <div className="pn-kpi-overview">
         <section className="vivid-score-card">
           <div className="score-top">

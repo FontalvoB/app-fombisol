@@ -37,7 +37,7 @@ export function Team() {
         title="Las personas que nos mueven"
         description="Conoce cómo nos conectamos y encuentra a tu próximo aliado."
       />
-      <div className="vivid-team-banner">
+      <div className="vivid-team-banner human-team-banner">
         <div>
           <span className="pn-eyebrow">
             DIFERENTES TALENTOS. UN MISMO PROPÓSITO.
@@ -54,7 +54,13 @@ export function Team() {
             </span>
           </div>
         </div>
-        <Icon name="diversity_3" size={74} />
+        <img
+          className="human-team-photo"
+          src="/images/people/team.jpg"
+          alt="Compañeros compartiendo un momento de colaboración en la oficina"
+          width="1536"
+          height="1024"
+        />
       </div>
       <div className="pn-toolbar">
         <Tabs

@@ -7,10 +7,12 @@ export function Home({
   requests,
   reads,
   name,
+  evaluationComplete,
 }: {
   requests: RequestItem[];
   reads: string[];
   name: string;
+  evaluationComplete: boolean;
 }) {
   return (
     <>
@@ -81,29 +83,54 @@ export function Home({
           <span className="hero-orbit orbit-one" aria-hidden="true" />
           <span className="hero-orbit orbit-two" aria-hidden="true" />
         </section>
-        <Link className="pn-focus" to="/dashboard/evaluations">
-          <div className="focus-top">
-            <span>
-              <i /> EN TU RADAR
+        <section
+          className="human-evaluation-card"
+          aria-labelledby="evaluation-title"
+        >
+          <div className="human-evaluation-cover">
+            <img
+              src="/images/people/reflection.jpg"
+              alt=""
+              width="1536"
+              height="1024"
+            />
+            <span className="human-status">
+              <Icon
+                name={evaluationComplete ? "check_circle" : "assignment"}
+                size={16}
+              />
+              {evaluationComplete ? "Completada" : "Por completar"}
             </span>
-            <Icon name="arrow_outward" />
           </div>
-          <span className="focus-icon">
-            <Icon name="target" size={27} />
-          </span>
-          <h3>
-            Tu crecimiento <br />
-            merece un momento.
-          </h3>
-          <p>
-            Ya puedes completar tu evaluación
-            <br />
-            de desempeño de este trimestre.
-          </p>
-          <span className="focus-bottom">
-            Comenzar evaluación <Icon name="arrow_forward" size={18} />
-          </span>
-        </Link>
+          <div className="human-evaluation-content">
+            <span className="human-eyebrow">
+              TU DESARROLLO · OCT — DIC 2026
+            </span>
+            <h2 id="evaluation-title">Evaluación trimestral</h2>
+            <p>
+              {evaluationComplete
+                ? "Tu reflexión ya está guardada. Revisa tus resultados y sigue creciendo."
+                : "Reconoce tus logros y descubre cómo seguir creciendo."}
+            </p>
+            <div className="human-evaluation-meta">
+              <span>
+                <Icon name="schedule" size={16} /> 5 minutos
+              </span>
+              <span>3 preguntas con Eva</span>
+            </div>
+            <Link
+              className="pn-button"
+              to={
+                evaluationComplete
+                  ? "/dashboard/evaluations"
+                  : "/dashboard/evaluations/chat"
+              }
+            >
+              {evaluationComplete ? "Ver mi evaluación" : "Iniciar evaluación"}
+              <Icon name="arrow_forward" size={18} />
+            </Link>
+          </div>
+        </section>
       </div>
       <div className="pn-stats">
         {[

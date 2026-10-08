@@ -36,20 +36,24 @@ export function Requests({ requests }: { requests: RequestItem[] }) {
           </Link>
         }
       />
-      <div className="pn-banner">
-        <span className="quick-icon">
-          <Icon name="beach_access" size={26} />
-        </span>
+      <div className="human-wellbeing-banner">
+        <img
+          src="/images/people/wellbeing.jpg"
+          alt="Una mujer disfruta de una pausa al aire libre"
+          width="1536"
+          height="1024"
+        />
         <div>
+          <span className="human-eyebrow">TIEMPO PARA TI</span>
           <h3>Un descanso también es avanzar.</h3>
           <p>
             Tienes <strong>15 días de vacaciones</strong> disponibles para
             recargar energías.
           </p>
+          <Link className="human-rest-link" to="/dashboard/requests/new">
+            Planea tu descanso <Icon name="arrow_forward" size={17} />
+          </Link>
         </div>
-        <Link to="/dashboard/requests/new">
-          Planea tu descanso <Icon name="arrow_forward" size={17} />
-        </Link>
       </div>
       <section className="pn-panel">
         <div className="pn-toolbar padded">
