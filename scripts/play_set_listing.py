@@ -187,7 +187,7 @@ def main():
             api.call("PUT", f"/edits/{eid}/listings/{lang}", {**data, "language": lang})
             print(f"✓ Textos [{lang}] actualizados")
 
-        shared = [("icon", (icon, "image/png")), ("featureGraphic", (feature, "image/jpeg"))]
+        shared = [("icon", icon), ("featureGraphic", feature)]
         for lang in LANGS:
             # Imágenes globales (icon + feature): un upload por tipo e idioma
             for img_type, path in shared:
