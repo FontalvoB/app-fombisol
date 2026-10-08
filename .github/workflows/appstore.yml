@@ -1,0 +1,34 @@
+# AUTODESPLIEGUE a App Store Connect: push a main → build nativo (backend PROD) → ASC.
+# La publicación en la tienda queda MANUAL (submit_for_review: false en el Fastfile):
+# se sube el build y el equipo revisa y publica desde App Store Connect.
+#
+# ⚠ BLOQUEADOR ACTUAL (ver DEPLOY.md): el certificado TLS del backend de producción
+#   (tech.peoplenet.info) está expirado — iOS ATS rechazará la API en release.
+#   Renovar el certificado ANTES de confiar en builds de producción.
+
+name: appstore
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "ios/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.production"
+      - ".github/workflows/ios-release.yml"
+      - ".github/workflows/appstore.yml"
+
+concurrency:
+  group: appstore-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/ios-release.yml
+    with:
+      mode: production
+      lane: appstore
+    secrets: inherit

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { IonContent, IonPage } from '@ionic/react'
 import { useHistory } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
+import { login, toApiError } from '@/lib/api'
 
 export default function Login() {
   const history = useHistory()
@@ -19,9 +20,20 @@ export default function Login() {
     }
     setLoading(true)
     setError('')
-    await new Promise((r) => setTimeout(r, 1200))
-    setLoading(false)
-    history.push('/dashboard')
+    try {
+      // El backend resuelve el correo vía `username` (ver api-types LoginRequest).
+      const response = await login({ username: email, password })
+      if (response.requirePasswordChange) {
+        setError('Debes cambiar tu contraseña antes de continuar.')
+        return
+      }
+      history.replace('/dashboard')
+    } catch (err) {
+      const apiError = toApiError(err)
+      setError(apiError.message || 'Correo o contraseña incorrectos.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -145,7 +157,7 @@ export default function Login() {
               </form>
 
               <p className="text-center text-slate-500 text-xs mt-5">
-                Demo: cualquier correo y contraseña
+                Credenciales de tu cuenta PeopleNet
               </p>
             </div>
 

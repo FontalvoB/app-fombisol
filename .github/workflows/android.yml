@@ -1,0 +1,31 @@
+# AUTODESPLIEGUE Android: push a develop/main → AAB firmado → Google Play (prueba interna).
+# UN solo workflow para ambas ramas: garantiza versionCode monotónico global
+# (dos workflows en paralelo colisionarían o harían downgrade).
+name: android
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - "src/**"
+      - "android/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".env.production"
+      - ".github/workflows/android.yml"
+      - ".github/workflows/android-release.yml"
+      - "scripts/play_publish.py"
+
+concurrency:
+  group: android-play # global: serializa builds, versionCode siempre creciente
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/android-release.yml
+    with:
+      mode: production # temporal: no hay backend DEV desplegado aún
+      track: internal
+      version_base: 3000000
+    secrets: inherit

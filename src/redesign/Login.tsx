@@ -1,13 +1,61 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useHistory } from "react-router-dom";
 import { Icon, Brand, Button } from "./shared";
+import { login, toApiError } from "../lib/api";
 
+/**
+ * M1 — Login real contra POST /api/auth/login.
+ * - Sin credenciales ni entrada demo hardcodeadas.
+ * - El botón se deshabilita durante el submit para evitar doble petición.
+ * - Errores en español (credencial inválida, red, 5xx).
+ * - requirePasswordChange=true: mensaje claro y avance bloqueado (la sesión
+ *   no se guarda: api.login() no persiste en ese caso).
+ */
 export function Login() {
   const history = useHistory();
   const [show, setShow] = useState(false);
   const [help, setHelp] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [passwordChangeRequired, setPasswordChangeRequired] = useState(false);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (submitting) return;
+    setError("");
+    setPasswordChangeRequired(false);
+    const user = username.trim();
+    const pass = password;
+    if (!user || !pass) {
+      setError("Ingresa tu usuario y tu contraseña.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const response = await login({ username: user, password: pass });
+      if (response.requirePasswordChange === true) {
+        // Cuenta bloqueada por política de cambio de contraseña: no avanzar
+        // ni crear sesión (decisión O0; flujo de cambio pendiente de backend).
+        setPasswordChangeRequired(true);
+        setError(
+          "Tu cuenta requiere cambiar la contraseña antes de continuar. " +
+            "Usa la opción de recuperación de acceso o contacta a Gestión Humana.",
+        );
+        return;
+      }
+      history.push("/dashboard");
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <div className="pn-login">
+    <main className="pn-login">
       <section className="pn-login-story">
         <Brand />
         <div className="login-story-copy">
@@ -59,64 +107,75 @@ export function Login() {
           </span>
           <h2>Qué bueno verte de nuevo.</h2>
           <p>Tu próximo gran día empieza aquí.</p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              history.push("/dashboard");
-            }}
-          >
-            <label>
-              Correo corporativo
+          <form onSubmit={handleSubmit}>
+            <label htmlFor="login-username">
+              Usuario o correo corporativo
+            </label>
+            <input
+              id="login-username"
+              type="text"
+              placeholder="nombre.usuario"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={submitting}
+              required
+            />
+            <label htmlFor="login-password">Contraseña</label>
+            <div className="password-field">
               <input
-                type="email"
-                placeholder="nombre@empresa.com"
-                autoComplete="email"
+                id="login-password"
+                type={show ? "text" : "password"}
+                placeholder="Ingresa tu contraseña"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={submitting}
                 required
               />
-            </label>
-            <label>
-              Contraseña
-              <div className="password-field">
-                <input
-                  type={show ? "text" : "password"}
-                  placeholder="Ingresa tu contraseña"
-                  autoComplete="current-password"
-                  required
-                  minLength={4}
-                />
-                <button
-                  type="button"
-                  aria-label={
-                    show ? "Ocultar contraseña" : "Mostrar contraseña"
-                  }
-                  onClick={() => setShow(!show)}
-                >
-                  <Icon name={show ? "visibility_off" : "visibility"} />
-                </button>
-              </div>
-            </label>
+              <button
+                type="button"
+                aria-label={
+                  show ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                onClick={() => setShow(!show)}
+                disabled={submitting}
+              >
+                <Icon name={show ? "visibility_off" : "visibility"} />
+              </button>
+            </div>
             <div className="login-options">
-              <span>Acceso de demostración</span>
+              <span>Accede con tus credenciales.</span>
               <button type="button" onClick={() => setHelp(!help)}>
                 ¿Necesitas ayuda?
               </button>
             </div>
             {help && (
               <div className="pn-info">
-                Esta es una demo: usa cualquier correo y una contraseña de al
-                menos 4 caracteres, o entra con el acceso de exploración.
+                Si olvidaste tu contraseña o tu usuario, contacta a Gestión
+                Humana para recuperar tu acceso.
               </div>
             )}
-            <Button type="submit">
-              Iniciar sesión <Icon name="arrow_forward" size={18} />
+            {error && (
+              <p role="alert" className="pn-info">
+                {error}
+              </p>
+            )}
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                "Iniciando sesión…"
+              ) : (
+                <>
+                  Iniciar sesión <Icon name="arrow_forward" size={18} />
+                </>
+              )}
             </Button>
           </form>
-          <div className="login-divider">
-            <span>o descubre tu nuevo espacio</span>
-          </div>
-          <Button secondary onClick={() => history.push("/dashboard")}>
-            Explorar la demo <Icon name="arrow_outward" size={18} />
-          </Button>
+          {passwordChangeRequired && (
+            <div className="login-divider">
+              <span>Tu acceso está bloqueado hasta cambiar la contraseña</span>
+            </div>
+          )}
           <div className="login-trust">
             <Icon name="verified_user" size={16} />
             <span>Tu espacio personal, en un solo lugar.</span>
@@ -126,6 +185,6 @@ export function Login() {
           © 2026 PeopleNet <span>Conectamos personas y posibilidades.</span>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

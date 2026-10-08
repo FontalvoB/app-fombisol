@@ -1,0 +1,207 @@
+# Fastfile — PeopleNet mobile (com.peoplenet.app)
+#
+# Flujo de autodespliegue iOS:
+#   - lane testflight : build --mode testflight (backend DEV)   → TestFlight
+#   - lane appstore   : build --mode production (backend PROD)  → App Store Connect
+#     (upload solamente: la publicación a la tienda es MANUAL, decisión del equipo)
+#
+# Autenticación: App Store Connect API key (método soportado, sin 2FA interactivo):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64 (contenido del .p8 en base64)
+# Certificados: match con MATCH_GIT_URL + MATCH_PASSWORD.
+#
+# Versionado: versionName del proyecto iOS queda fijo (1.0.0 salvo cambio manual);
+# el build number se deriva del run de GitHub Actions (100 + run_number) para
+# garantizar monotonicidad sin depender del estado del repositorio.
+
+default_platform(:ios)
+
+# ── Parches de robustez (fastlane 2.240.x) — aplicados LAZY en el lane ────────
+# 1) Spaceship::ConnectAPI::Models.parse lanza "No data" cuando la API devuelve
+#    data: null (p. ej. AppStoreReviewDetail aún no existe en una versión nueva).
+# 2) Deliver::UploadMetadata#review_attachment_file no tolera el detalle nil.
+private_lane :apply_compat_patches do
+  require "spaceship"
+  # 1) parse tolera data: null
+  unless Spaceship::ConnectAPI::Models.singleton_methods.include?(:parse_with_null_guard)
+    Spaceship::ConnectAPI::Models.singleton_class.instance_eval do
+      original = instance_method(:parse)
+      define_method(:parse_with_null_guard) do |json|
+        return [] if json.is_a?(Hash) && json["data"].nil?
+        original.bind(self).call(json)
+      end
+      alias_method :parse_without_null_guard_orig, :parse
+      alias_method :parse, :parse_with_null_guard
+    end
+  end
+
+  # 2) review_attachment_file nil-safe
+  require "deliver"
+  klazz = Deliver::UploadMetadata
+  unless klazz.instance_methods.include?(:review_attachment_file_nil_safe)
+    klazz.class_eval do
+      def review_attachment_file_nil_safe(version)
+        detail = begin
+                   version.fetch_app_store_review_detail
+                 rescue StandardError => e
+                   UI.important("App Store Review Detail no disponible aún (#{e.message.to_s[0, 80]}) — omito adjuntos de revisión")
+                   nil
+                 end
+        return unless detail && detail.respond_to?(:app_store_review_attachments)
+        attachments = detail.app_store_review_attachments || []
+        if options[:app_review_attachment_file]
+          attachments.each(&:delete!)
+          detail.upload_attachment(path: options[:app_review_attachment_file])
+        end
+        attachments.each(&:delete!) unless attachments.empty?
+      end
+      alias_method :review_attachment_file_orig_patch, :review_attachment_file
+      alias_method :review_attachment_file, :review_attachment_file_nil_safe
+    end
+  end
+  UI.message("✓ Parches de compatibilidad fastlane aplicados")
+end
+# ── Fin de parches ────────────────────────────────────────────────────────────
+
+# Bloque de opciones de App Store Connect API key (se usa en los lanes de upload).
+private_lane :asc_api_key do
+  unless ENV["ASC_KEY_ID"] && ENV["ASC_ISSUER_ID"] && ENV["ASC_KEY_P8_BASE64"]
+    UI.user_error!("Faltan secrets de App Store Connect (ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8_BASE64) — ver DEPLOY.md")
+  end
+  require "base64"
+  app_store_connect_api_key(
+    key_id: ENV["ASC_KEY_ID"],
+    issuer_id: ENV["ASC_ISSUER_ID"],
+    key_content: Base64.decode64(ENV["ASC_KEY_P8_BASE64"]),
+    is_key_content_base64: false,
+    duration: 1200,
+    in_house: false,
+  )
+end
+
+# Descarga/actualiza certificados + provisioning profiles con match.
+private_lane :prepare_signing do |options|
+  unless ENV["MATCH_GIT_URL"] && ENV["MATCH_PASSWORD"]
+    UI.user_error!("Faltan secrets de match (MATCH_GIT_URL / MATCH_PASSWORD) — ver DEPLOY.md")
+  end
+  match(
+    type: "appstore",
+    readonly: options[:readonly] != false, # en CI true: solo lee del repo de certs
+    app_identifier: "com.peoplenet.app",
+  )
+end
+
+# Build number monotónico derivado del run de Actions (evita colisiones).
+private_lane :bump_build_number do
+  run_number = ENV["GITHUB_RUN_NUMBER"] ? ENV["GITHUB_RUN_NUMBER"].to_i : 0
+  build_number = 100 + run_number
+  UI.message!("Build number: #{build_number}")
+  increment_build_number(
+    build_number: build_number,
+    xcodeproj: "App.xcodeproj",
+  )
+end
+
+platform :ios do
+  desc "Sube build de desarrollo a TestFlight (rama develop)"
+  lane :testflight do
+    asc_api_key
+    prepare_signing
+    bump_build_number
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "../build",
+      output_name: "peoplenet-testflight.ipa",
+      silent: true,
+    )
+    pilot(
+      ipa: "../build/peoplenet-testflight.ipa",
+      skip_waiting_for_build_processing: true, # no bloquea el runner 15+ min
+      distribute_external: false,
+      changelog: "Build automático desde develop — #{ENV['GITHUB_SHA']&.[](0, 8)}",
+    )
+  end
+
+  desc "Sube build de producción a App Store Connect (publicación manual)"
+  lane :appstore do
+    asc_api_key
+    prepare_signing
+    bump_build_number
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "../build",
+      output_name: "peoplenet-appstore.ipa",
+      silent: true,
+    )
+    upload_to_app_store(
+      ipa: "../build/peoplenet-appstore.ipa",
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false, # NUNCA auto-publicar: decisión manual del equipo
+    )
+  end
+
+  # Envía la versión 1.0 a revisión de Apple (App Store).
+  #
+  # Sube TODA la metadata del repo (fastlane/metadata): textos, keywords,
+  # URLs, copyright e información para App Review (cuenta demo). Requiere
+  # screenshots en fastlane/metadata/screenshots/<locale>/ y un build ya
+  # subido a ASC (el build number lo pasa el workflow).
+  #
+  # Uso: fastlane ios submit_appstore submit_for_review:true build_number:105
+  #      (con submit_for_review:false valida y sube metadata sin enviar)
+  lane :submit_appstore do |options|
+    apply_compat_patches
+    api_key = asc_api_key
+    submit = options[:submit_for_review] == true
+    UI.message("cwd=#{Dir.pwd}")
+
+    # Age rating (idempotente): sin esto la versión queda 'not in valid state'.
+    # IMPORTANTÍSIMO: fastlane hace Dir.chdir al root del proyecto durante la
+    # verificación de opciones del action → SIEMPRE pasar ruta absoluta.
+    rating_path = ["/metadata/age_rating.json", "../fastlane/metadata/age_rating.json",
+                   "fastlane/metadata/age_rating.json"]
+                   .map { |p| File.expand_path(p, Dir.pwd) }.find { |p| File.exist?(p) }
+    UI.user_error!("age_rating.json no encontrado en ninguna ruta conocida") unless rating_path
+    UI.message("Age rating config: #{rating_path}")
+    update_app_age_rating(
+      api_key: api_key,
+      app_identifier: "com.peoplenet.app",
+      age_rating_config_path: rating_path
+    )
+    # Paths deterministas: cwd puede ser ios/fastlane o raíz del repo según quien
+    # invoque; entregamos ABSOLUTOS calculados por sondeo.
+    root = File.expand_path(Dir.pwd.end_with?("/ios/fastlane") ? "../.." : ".")
+    meta = File.join(root, "fastlane/metadata")
+    shots = File.join(root, "fastlane/screenshots")
+    UI.user_error!("No existe #{meta}") unless File.directory?(meta)
+    UI.user_error!("No existe #{shots}") unless File.directory?(shots)
+    UI.message("metadata_path=#{meta}")
+
+    deliver(
+      api_key: api_key,
+      app_identifier: "com.peoplenet.app",
+      app_version: "1.0",
+      build_number: options[:build_number] ? options[:build_number].to_s : nil,
+      metadata_path: meta,
+      screenshots_path: shots,
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: submit,
+      # Publicación manual tras la aprobación (decisión del equipo).
+      automatic_release: false,
+      # CI no interactivo: sin prompts, sin validación de IPAs antiguas.
+      force: true,
+      precheck_include_in_app_purchases: false,
+      # Sin IDFA (no hay publicidad ni tracking) y sin cripto exportable
+      # (el binario ya lo declara: ITSAppUsesNonExemptEncryption=false).
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false,
+      },
+    )
+  end
+end

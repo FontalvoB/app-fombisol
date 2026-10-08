@@ -1,0 +1,13 @@
+PeopleNet is your organization's workforce management mobile app: evaluations, KPIs, requests and documents, all in one place.
+
+• Evaluations — complete and review performance evaluations assigned to you.
+• KPIs — track your performance indicators with clear, up-to-date results.
+• Requests — submit and follow internal requests, no paperwork.
+• Documents — access your documents and employment certificates.
+• Profile — keep your information up to date.
+
+PeopleNet is intended for employees of organizations that already use the PeopleNet platform. You need the credentials provided by your organization to sign in; public account registration is not offered.
+
+Accounts are managed by the using organization: authorized staff create and manage access from the PeopleNet web platform, and data is processed securely with encryption in transit (HTTPS).
+
+For access or support issues, contact your organization's PeopleNet administrator or email soporte@peoplenet.info.

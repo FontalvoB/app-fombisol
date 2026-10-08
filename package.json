@@ -1,14 +1,17 @@
 {
   "name": "peoplenet-mobile",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --mode development",
+    "build:testflight": "tsc && vite build --mode testflight",
+    "build:production": "tsc && vite build --mode production",
     "preview": "vite preview",
     "ionic:build": "npm run build",
-    "ionic:serve": "npm run dev"
+    "ionic:serve": "npm run dev",
+    "test:e2e": "e2e run"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
@@ -26,12 +29,14 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@e2e-dev/web": "^0.13.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/react-router-dom": "^5.3.3",
     "@vitejs/plugin-react": "^4.3.4",
+    "e2e": "^0.18.0",
     "prettier": "^3.9.9",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.3",

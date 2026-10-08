@@ -1,36 +1,130 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Icon, Button, Badge, Heading, Tabs, download, Modal } from "./shared";
-import { metrics } from "./data";
-import { PerformanceChart, ProgressRing, Sparkline } from "./Charts";
+import {
+  Icon,
+  Button,
+  Badge,
+  Heading,
+  Tabs,
+  download,
+  Modal,
+  SectionError,
+  LoadingNote,
+} from "./shared";
+import { ProgressRing } from "./Charts";
+import {
+  useApi,
+  useEmployeeIndicators,
+  sessionEmployeeId,
+  periodsFromIndicators,
+  periodLabel,
+  monthLabel,
+  formatMeasure,
+  type MonthPeriod,
+} from "../lib/api";
+import type {
+  EmployeeMonthlyAnalyticsResponse,
+  IndicatorWire,
+} from "../lib/api-types";
+
+/**
+ * M3 — KPIs / Metas con datos reales de kpis-ms.
+ * - Períodos derivados de los indicadores reales del colaborador
+ *   (GET /api/indicators/employee/{employeeId}); nunca un selector fijo.
+ * - Lista del período: GET /api/indicators/employee/{id}/year/{y}/month/{m}
+ *   (finalResultValue null = pendiente de calificar).
+ * - Resumen del mes: GET .../analytics — completionRate (% calificados) y
+ *   averageResult (promedio de resultados) son métricas distintas.
+ * - Se respeta measurementUnit (no se asume "%" para otra unidad) y
+ *   measurementDirection (descendente ≠ "más es mejor").
+ * - Sin sparklines ni variaciones inventadas: solo valores con contrato.
+ * - Exportar: CSV con los indicadores reales del período seleccionado.
+ * - Lecturas obsoletas al cambiar mes: canceladas por useApi (AbortController).
+ */
+
+/** Celdas CSV con escape de separador, comillas y saltos de línea. */
+function csvCell(value: string | number | null): string {
+  const raw = value == null ? "" : String(value);
+  return /[;"\n\r]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
+}
+
+const FILTERS = ["Todos", "Evaluado", "Pendiente"] as const;
+type Filter = (typeof FILTERS)[number];
 
 export function Kpis({ notify }: { notify: (v: string) => void }) {
-  const [filter, setFilter] = useState("Todos");
-  const [period, setPeriod] = useState("Octubre 2026");
-  const [detail, setDetail] = useState<string | null>(null);
-  const periodMetrics = metrics.map((m, i) => ({
-    ...m,
-    index: i,
-    value: period === "Octubre 2026" ? m.value : m.value - 4,
-    status:
-      period === "Septiembre 2026" && m.status === "Cumplido"
-        ? "En curso"
-        : m.status,
-  }));
-  const items = periodMetrics.filter(
-    (m) => filter === "Todos" || m.status === filter,
+  const [filter, setFilter] = useState<Filter>("Todos");
+  const [selectedPeriod, setSelectedPeriod] = useState<MonthPeriod | null>(
+    null,
   );
-  const selected = periodMetrics.find((m) => m.name === detail);
+  const [detailId, setDetailId] = useState<number | null>(null);
+
+  const employeeId = sessionEmployeeId();
+
+  // Períodos reales (meses con datos) a partir de los indicadores del empleado.
+  const indicatorsAll = useEmployeeIndicators(employeeId);
+  const periods = periodsFromIndicators(indicatorsAll.state.data);
+  // Por defecto el período más reciente con datos; el usuario puede cambiarlo.
+  const period: MonthPeriod | null = selectedPeriod ?? periods[0] ?? null;
+
+  // Lista del período (lista directa, sin paginación).
+  const monthIndicators = useApi<IndicatorWire[]>(
+    employeeId != null && period
+      ? `/indicators/employee/${employeeId}/year/${period.year}/month/${period.month}`
+      : null,
+  );
+
+  // Resumen del período con analytics (completionRate ≠ averageResult).
+  const analytics = useApi<EmployeeMonthlyAnalyticsResponse>(
+    employeeId != null && period
+      ? `/indicators/employee/${employeeId}/year/${period.year}/month/${period.month}/analytics`
+      : null,
+  );
+  const analyticsData = analytics.state.data;
+
+  const rows = monthIndicators.state.data ?? [];
+  const items = rows.filter(
+    (r) =>
+      filter === "Todos" ||
+      (filter === "Evaluado" ? r.finalResultValue != null : r.finalResultValue == null),
+  );
+  const selected = rows.find((r) => r.id != null && r.id === detailId) ?? null;
+
+  const noEmployee = employeeId == null;
+  const listLoading = monthIndicators.state.status === "loading";
+  const listError = monthIndicators.state.status === "error";
+
   const exportReport = () => {
+    if (!rows.length) return;
+    const header =
+      "Indicador;Objetivo;Area;Mes;Anio;Unidad;Direccion;Meta (%);Peso (%);Resultado;Estado";
+    const body = rows
+      .map((r) =>
+        [
+          r.indicatorTitle ?? r.objective ?? `Indicador ${r.id ?? ""}`,
+          r.objective ?? "",
+          r.areaName ?? r.dependencyName ?? "",
+          monthLabel(r.month),
+          r.year ?? "",
+          r.measurementUnit ?? "%",
+          r.measurementDirection ?? "",
+          r.targetPercentage ?? "",
+          r.weightPercentage ?? "",
+          r.finalResultValue ?? "",
+          r.finalResultValue != null ? "Evaluado" : "Pendiente",
+        ]
+          .map(csvCell)
+          .join(";"),
+      )
+      .join("\n");
     download(
-      "indicadores.csv",
-      "Indicador;Área;Resultado;Meta;Periodo\n" +
-        periodMetrics
-          .map((m) => `${m.name};${m.area};${m.value};${m.target};${period}`)
-          .join("\n"),
+      `indicadores-${period?.month ?? "sin-periodo"}-${period?.year ?? ""}.csv`,
+      `${header}\n${body}\n`,
     );
     notify("Reporte descargado.");
   };
+
+  const canExport = monthIndicators.state.status === "success" && rows.length > 0;
+
   return (
     <>
       <Heading
@@ -38,7 +132,7 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
         title="Vas por más."
         description="Cada paso cuenta. Mira todo lo que estás logrando."
         action={
-          <Button secondary onClick={exportReport}>
+          <Button secondary onClick={exportReport} disabled={!canExport}>
             <Icon name="download" /> Exportar
           </Button>
         }
@@ -47,16 +141,36 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
         <span>
           <Icon name="calendar_month" size={18} /> Tu desempeño
         </span>
-        <select
-          aria-label="Periodo"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-        >
-          <option>Octubre 2026</option>
-          <option>Septiembre 2026</option>
-        </select>
+        {noEmployee ? (
+          <LoadingNote label="Usuario sin colaborador asociado." />
+        ) : indicatorsAll.state.status === "loading" ? (
+          <LoadingNote label="Cargando períodos…" />
+        ) : indicatorsAll.state.status === "error" ? (
+          <SectionError
+            error={indicatorsAll.state.error ?? "Sin dato"}
+            restricted={indicatorsAll.state.errorStatus === 403}
+            onRetry={indicatorsAll.reload}
+          />
+        ) : !periods.length ? (
+          <LoadingNote label="Sin períodos con indicadores todavía." />
+        ) : (
+          <select
+            aria-label="Periodo"
+            value={period ? periodLabel(period) : ""}
+            onChange={(e) => {
+              const chosen = periods.find((p) => periodLabel(p) === e.target.value);
+              if (chosen) setSelectedPeriod(chosen);
+            }}
+          >
+            {periods.map((p) => (
+              <option key={`${p.year}-${p.month}`} value={periodLabel(p)}>
+                {periodLabel(p)}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
-      <Link className="editorial-strategy" to="/dashboard/documents/estrategia">
+      <Link className="editorial-strategy" to="/dashboard/documents">
         <img
           src="/images/people/estrategia.jpg"
           alt=""
@@ -66,181 +180,270 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
         <div>
           <span className="human-eyebrow">CADA META TIENE UN PROPÓSITO</span>
           <h2>Tu aporte nos lleva más lejos.</h2>
-          <p>Descubre cómo tus objetivos conectan con nuestro plan.</p>
+          <p>
+            Descubre cómo tus objetivos conectan con los documentos de la
+            organización.
+          </p>
           <span className="editorial-strategy-link">
-            Explorar la estrategia <Icon name="arrow_forward" size={17} />
+            Ver la biblioteca <Icon name="arrow_forward" size={17} />
           </span>
         </div>
       </Link>
-      <div className="pn-kpi-overview">
-        <section className="vivid-score-card">
-          <div className="score-top">
-            <span>
-              <i /> VISTA GENERAL
-            </span>
-            <Icon name="auto_awesome" />
-          </div>
-          <div className="score-center">
-            <ProgressRing value={period === "Octubre 2026" ? 87.3 : 83.1} />
-            <div>
-              <span className="score-pill">
-                <Icon name="trending_up" size={15} /> +
-                {period === "Octubre 2026" ? "4,2" : "7,1"} puntos
+      {period && (
+        <div className="pn-kpi-overview">
+          <section className="vivid-score-card">
+            <div className="score-top">
+              <span>
+                <i /> VISTA GENERAL · {periodLabel(period)}
               </span>
-              <h2>
-                ¡Tu mejor versión
-                <br />
-                está en marcha!
-              </h2>
-              <p>
-                Los pequeños avances
-                <br />
-                hacen grandes resultados.
-              </p>
+              <Icon name="auto_awesome" />
             </div>
-          </div>
-          <div className="score-legend">
-            <span>
-              <i /> Tu avance
-            </span>
-            <span>
-              <i /> Lo que viene
-            </span>
-            <strong>Meta global 100%</strong>
-          </div>
-        </section>
-        <PerformanceChart period={period} />
-      </div>
+            <div className="score-center">
+              {analytics.state.status === "success" &&
+              analyticsData?.completionRate != null ? (
+                <ProgressRing
+                  value={analyticsData.completionRate}
+                  label="indicadores evaluados"
+                />
+              ) : (
+                <div className="score-center-text">
+                  {analytics.state.status === "loading"
+                    ? "Cargando resumen…"
+                    : analytics.state.status === "error"
+                      ? analytics.state.error
+                      : "Sin resumen para este período."}
+                </div>
+              )}
+              <div>
+                {analytics.state.status === "success" &&
+                analyticsData?.totalIndicators != null ? (
+                  <span className="score-pill">
+                    <Icon name="check_circle" size={15} />
+                    {analyticsData.completedIndicators ?? 0} de{" "}
+                    {analyticsData.totalIndicators} indicadores evaluados
+                  </span>
+                ) : null}
+                <h2>
+                  Tu avance
+                  <br />
+                  <em>de este mes.</em>
+                </h2>
+                <p>
+                  {analyticsData?.averageResult != null
+                    ? `Resultado promedio: ${formatMeasure(analyticsData.averageResult, "%")}`
+                    : "Sin resultados calificados todavía."}
+                </p>
+              </div>
+            </div>
+            <div className="score-legend">
+              <span>
+                <i /> Indicadores evaluados
+              </span>
+              <span>
+                <i /> Resultado promedio
+              </span>
+              <strong>
+                Meta promedio:{" "}
+                {analyticsData?.averageTargetPercentage != null
+                  ? formatMeasure(analyticsData.averageTargetPercentage, "%")
+                  : "Sin dato"}
+              </strong>
+            </div>
+          </section>
+        </div>
+      )}
       <div className="pn-section-heading vivid-metrics-heading">
         <div>
           <h2>El detalle de tus metas</h2>
           <p>Enfócate, avanza y celebra.</p>
         </div>
-        <span className="vivid-count">04</span>
+        <span className="vivid-count">
+          {String(items.length).padStart(2, "0")}
+        </span>
       </div>
-      <div className="pn-toolbar">
-        <Tabs
-          items={["Todos", "En curso", "En riesgo", "Cumplido"]}
-          value={filter}
-          set={setFilter}
-        />
-      </div>
-      <div className="pn-metric-grid">
-        {items.map((m) => (
-          <button
-            className={`pn-panel metric-card metric-tone-${m.index}`}
-            key={m.name}
-            onClick={() => setDetail(m.name)}
-            aria-label={`Ver detalle de ${m.name}`}
-          >
-            <div className="panel-heading">
-              <span className="quick-icon">
-                <Icon
-                  name={
-                    ["sentiment_satisfied", "local_shipping", "groups", "bolt"][
-                      m.index
-                    ]
-                  }
-                />
-              </span>
-              <Badge>{m.status}</Badge>
-            </div>
-            <span className="pn-eyebrow">{m.area}</span>
-            <h3>{m.name}</h3>
-            <div className="metric-value-chart">
-              <div className="metric-number">
-                {m.value}
-                <small>%</small>
-              </div>
-              <Sparkline
-                values={[
-                  m.value - 16,
-                  m.value - 8,
-                  m.value - 11,
-                  m.value - 4,
-                  m.value - 6,
-                  m.value,
-                ]}
-                color={m.status === "En riesgo" ? "#c58c09" : "#045c94"}
-              />
-            </div>
-            <div className="metric-target">
-              <span>Meta: {m.target}%</span>
-              <strong>
-                {Math.min(Math.round((m.value / m.target) * 100), 100)}% del
-                objetivo
-              </strong>
-            </div>
-            <div className="pn-progress">
-              <i
-                style={{
-                  width: Math.min((m.value / m.target) * 100, 100) + "%",
-                }}
-              />
-            </div>
-            <div className="metric-bottom">
-              <span
-                className={m.status === "En riesgo" ? "warning" : "positive"}
-              >
-                <Icon
-                  name={m.status === "En riesgo" ? "south_east" : "north_east"}
-                  size={14}
-                />
-                {m.change}% este mes
-              </span>
-              <Icon name="arrow_forward" size={18} />
-            </div>
-          </button>
-        ))}
-      </div>
-      {!items.length && (
-        <div className="pn-empty">
-          <Icon name="flag" size={32} />
-          <h3>Aún no hay metas en este estado.</h3>
-          <p>Selecciona otro filtro para seguir explorando.</p>
+      {period && (
+        <div className="pn-toolbar">
+          <Tabs
+            items={[...FILTERS]}
+            value={filter}
+            set={(v) => setFilter(v as Filter)}
+          />
         </div>
       )}
-      <div className="vivid-insight">
-        <span>
-          <Icon name="tips_and_updates" size={24} />
-        </span>
-        <div>
-          <strong>Un pequeño impulso, un gran cambio.</strong>
+      {listLoading ? (
+        <LoadingNote label="Cargando indicadores…" />
+      ) : listError ? (
+        <SectionError
+          error={monthIndicators.state.error ?? "Sin dato"}
+          restricted={monthIndicators.state.errorStatus === 403}
+          onRetry={monthIndicators.reload}
+        />
+      ) : !rows.length ? (
+        <div className="pn-empty">
+          <Icon name="flag" size={32} />
+          <h3>
+            {period
+              ? `Sin indicadores en ${periodLabel(period)}.`
+              : "Sin indicadores todavía."}
+          </h3>
           <p>
-            Prioriza las entregas esta semana. Estás a{" "}
-            {period === "Octubre 2026" ? 16 : 20} puntos de alcanzar la meta de
-            tu equipo.
+            Cuando tu líder asigne indicadores para un mes, aparecerán aquí.
           </p>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="pn-metric-grid">
+            {items.map((r) => {
+              const completed = r.finalResultValue != null;
+              const ascending =
+                (r.measurementDirection ?? "").toLowerCase() === "ascendente";
+              const unitIsPercent = (r.measurementUnit ?? "%") === "%";
+              // Barra solo para indicadores ascendentes en % con resultado:
+              // otra unidad o dirección descendente no admiten esa fórmula.
+              const progress =
+                completed && ascending && unitIsPercent
+                  ? Math.max(0, Math.min(100, r.finalResultValue as number))
+                  : null;
+              return (
+                <button
+                  className={`pn-panel metric-card metric-tone-${(r.id ?? 0) % 4}`}
+                  key={r.id ?? r.indicatorTitle}
+                  onClick={() => r.id != null && setDetailId(r.id)}
+                  aria-label={`Ver detalle de ${r.indicatorTitle ?? r.objective ?? "indicador"}`}
+                  disabled={r.id == null}
+                >
+                  <div className="panel-heading">
+                    <span className="quick-icon">
+                      <Icon name="monitoring" />
+                    </span>
+                    <Badge>{completed ? "Evaluado" : "Pendiente"}</Badge>
+                  </div>
+                  <span className="pn-eyebrow">
+                    {r.areaName ?? r.dependencyName ?? "Sin área"}
+                  </span>
+                  <h3>{r.indicatorTitle ?? r.objective ?? "Indicador"}</h3>
+                  <div className="metric-value-chart">
+                    <div className="metric-number">
+                      {completed
+                        ? formatMeasure(r.finalResultValue, r.measurementUnit)
+                        : "Pendiente"}
+                    </div>
+                  </div>
+                  <div className="metric-target">
+                    <span>
+                      Meta:{" "}
+                      {r.targetPercentage != null
+                        ? formatMeasure(r.targetPercentage, "%")
+                        : "Sin dato"}
+                    </span>
+                    <strong>
+                      Peso:{" "}
+                      {r.weightPercentage != null
+                        ? formatMeasure(r.weightPercentage, "%")
+                        : "Sin dato"}
+                    </strong>
+                  </div>
+                  {progress != null && (
+                    <div className="pn-progress">
+                      <i style={{ width: `${progress}%` }} />
+                    </div>
+                  )}
+                  <div className="metric-bottom">
+                    <span className={completed ? "positive" : ""}>
+                      <Icon
+                        name={completed ? "check_circle" : "hourglass_empty"}
+                        size={14}
+                      />
+                      {r.measurementDirection
+                        ? r.measurementDirection.toLowerCase() === "descendente"
+                          ? "Dirección descendente"
+                          : "Dirección ascendente"
+                        : "Sin dirección"}
+                    </span>
+                    <Icon name="arrow_forward" size={18} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {!items.length && (
+            <div className="pn-empty">
+              <Icon name="filter_alt" size={30} />
+              <h3>Aún no hay indicadores en este estado.</h3>
+              <p>Selecciona otro filtro para seguir explorando.</p>
+            </div>
+          )}
+        </>
+      )}
       {selected && (
-        <Modal title={selected.name} close={() => setDetail(null)}>
+        <Modal
+          title={
+            selected.indicatorTitle ??
+            selected.objective ??
+            "Detalle del indicador"
+          }
+          close={() => setDetailId(null)}
+        >
           <div className="metric-detail">
-            <Badge>{selected.status}</Badge>
-            <ProgressRing value={selected.value} label="Resultado actual" />
+            <Badge>
+              {selected.finalResultValue != null ? "Evaluado" : "Pendiente"}
+            </Badge>
+            {selected.finalResultValue != null &&
+            (selected.measurementDirection ?? "").toLowerCase() ===
+              "ascendente" &&
+            (selected.measurementUnit ?? "%") === "%" ? (
+              <ProgressRing
+                value={selected.finalResultValue}
+                label="Resultado actual"
+              />
+            ) : null}
             <div className="metric-detail-comparison">
               <div>
                 <span>Tu resultado</span>
-                <strong>{selected.value}%</strong>
+                <strong>
+                  {formatMeasure(selected.finalResultValue, selected.measurementUnit)}
+                </strong>
               </div>
               <div>
                 <span>Tu meta</span>
-                <strong>{selected.target}%</strong>
+                <strong>
+                  {selected.targetPercentage != null
+                    ? formatMeasure(selected.targetPercentage, "%")
+                    : "Sin dato"}
+                </strong>
               </div>
               <div>
-                <span>Por alcanzar</span>
+                <span>Peso</span>
                 <strong>
-                  {Math.max(0, selected.target - selected.value)} pts
+                  {selected.weightPercentage != null
+                    ? formatMeasure(selected.weightPercentage, "%")
+                    : "Sin dato"}
                 </strong>
               </div>
             </div>
+            {selected.objective && (
+              <p>
+                <strong>Objetivo: </strong>
+                {selected.objective}
+              </p>
+            )}
+            {selected.indicatorDescription && (
+              <p>{selected.indicatorDescription}</p>
+            )}
             <p>
-              {selected.value >= selected.target
-                ? "¡Lo lograste! Superaste tu meta. Sigue compartiendo lo que te funciona con tu equipo."
-                : "Tu próximo paso: revisa los pendientes de la semana con tu equipo y define una acción concreta para avanzar."}
+              {selected.finalResultValue == null
+                ? "Sin calificación registrada todavía. Aparecerá cuando este indicador sea evaluado."
+                : (selected.measurementDirection ?? "").toLowerCase() ===
+                    "descendente"
+                  ? "Indicador de dirección descendente: aquí un valor menor respecto a la referencia es mejor."
+                  : selected.targetPercentage != null &&
+                      selected.finalResultValue >= selected.targetPercentage
+                    ? "¡Meta alcanzada! Sigue compartiendo lo que te funciona con tu equipo."
+                    : "En avance hacia la meta. Revisa los pendientes con tu líder y define una acción concreta."}
             </p>
             <span className="small-muted">
-              Periodo: {period} · Datos de demostración
+              {period ? `Período: ${periodLabel(period)} · ` : ""}Datos del
+              servidor
             </span>
           </div>
         </Modal>

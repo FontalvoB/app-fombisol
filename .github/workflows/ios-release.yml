@@ -1,0 +1,176 @@
+# Workflow REUTILIZABLE: build nativo iOS + subida a App Store Connect.
+# Consumido por testflight.yml (develop → backend dev) y appstore.yml (main → prod).
+#
+# Firma SIN match: Xcode genera/refresca el provisioning profile directamente
+# con la App Store Connect API key (asc_api_key → XCODE_* envs de xcodebuild).
+# Requisito único: ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8_BASE64 secrets +
+# APPLE_TEAM_ID. Sin repo de certificados, sin Apple ID, sin keychain extra.
+#
+# vars:    VITE_API_BASE_URL_TESTFLIGHT / VITE_API_BASE_URL_PRODUCTION
+
+name: ios-release (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "Modo de build de Vite (.env.<mode>)"
+        required: true
+        type: string
+      lane:
+        description: "Etiqueta del build (testflight | appstore) — sube con altool"
+        required: true
+        type: string
+
+jobs:
+  ios:
+    name: iOS → ${{ inputs.lane }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      # URL de la API inyectada en build (gana sobre .env.<mode> del repo).
+      VITE_API_BASE_URL: ${{ inputs.mode == 'testflight' && vars.VITE_API_BASE_URL_TESTFLIGHT || vars.VITE_API_BASE_URL_PRODUCTION }}
+      VITE_APP_ENV: ${{ inputs.mode }}
+      LANG: en_US.UTF-8
+      CI: "true"
+      FASTLANE_SKIP_UPDATE_CHECK: "true"
+      FASTLANE_OPT_OUT_USAGE: "true"
+      # Firma automática vía ASC API key (xcodebuild -allowProvisioningUpdates)
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node 22 + npm ci
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Instalar dependencias web
+        run: npm ci
+
+      - name: Build web (${{ inputs.mode }})
+        run: npm run build -- --mode ${{ inputs.mode }}
+
+      - name: Generar proyecto iOS si no existe
+        run: |
+          if [ ! -d "ios/App/App.xcodeproj" ]; then
+            echo "ios/App/App.xcodeproj no existe: generando con cap add ios"
+            npx cap add ios
+          fi
+
+      - name: Sincronizar Capacitor (dist → ios)
+        run: npx cap sync ios
+
+      - name: Descargar perfil de distribución (App Store)
+        env:
+          PROFILE_B64: ${{ secrets.APPLE_DIST_PROFILE_BASE64 }}
+        run: |
+          echo "$PROFILE_B64" | base64 --decode > /tmp/com.peoplenet.app-appstore.mobileprovision
+          # Solo MobileDevice (ruta "manual"): si también está en UserData,
+          # Xcode lo trata como managed y exportArchive manual falla.
+          mkdir -p ~/Library/MobileDevice/"Provisioning Profiles"
+          cp /tmp/com.peoplenet.app-appstore.mobileprovision ~/Library/MobileDevice/"Provisioning Profiles"/
+          security cms -D -i /tmp/com.peoplenet.app-appstore.mobileprovision | grep -E "<key>Name|ExpirationDate" -A1 | head -4
+
+      - name: Importar certificado de distribución (llavero efímero)
+        timeout-minutes: 8
+        env:
+          P12_B64: ${{ secrets.APPLE_DIST_P12_BASE64 }}
+          P12_PASS: ${{ secrets.APPLE_DIST_P12_PASSWORD }}
+        run: |
+          set -ex
+          echo "$P12_B64" | base64 --decode > /tmp/dist.p12
+          KC="$RUNNER_TEMP/ios-signing.keychain"
+          KC_PASS=$(openssl rand -hex 32)
+          security create-keychain -p "$KC_PASS" "$KC" < /dev/null
+          security set-keychain-settings -lut 7200 "$KC" < /dev/null
+          security unlock-keychain -p "$KC_PASS" "$KC" < /dev/null
+          security import /tmp/dist.p12 -P "$P12_PASS" -A -t cert -f pkcs12 -k "$KC" < /dev/null
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" "$KC" < /dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | sed 's/"//g' | tr '\n' ' ') < /dev/null
+          security find-identity -v -p codesigning "$KC"
+          echo "KC_PATH=$KC" >> "$GITHUB_ENV"
+
+      - name: Materializar API key de App Store Connect
+        working-directory: ios
+        run: |
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > /tmp/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+          mkdir -p ~/private_keys
+          cp /tmp/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 ~/private_keys/
+
+      - name: Build number monotónico (100 + run number)
+        working-directory: ios/App
+        run: |
+          BUILD_NUMBER=$((100 + ${{ github.run_number }}))
+          echo "Build number: $BUILD_NUMBER"
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Archive (Release, sin firmar — la firma ocurre en export)
+        timeout-minutes: 25
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/PeopleNet.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Export IPA (firma automática — perfil managed + certificado importado)
+        timeout-minutes: 15
+        working-directory: ios/App
+        run: |
+          cat > build/exportOptions.plist <<'EOPLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOPLIST
+          security find-identity -v -p codesigning "$KC_PATH"
+          xcodebuild -exportArchive \
+            -archivePath build/PeopleNet.xcarchive \
+            -exportPath build/ipa \
+            -exportOptionsPlist build/exportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }}
+
+      - name: Subir a App Store Connect (altool)
+        working-directory: ios/App
+        run: |
+          SHORT_VERSION=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleShortVersionString" build/PeopleNet.xcarchive/Info.plist)
+          BUNDLE_VERSION=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleVersion" build/PeopleNet.xcarchive/Info.plist)
+          xcrun altool --upload-package build/ipa/App.ipa \
+            --type ios \
+            --apple-id ${{ secrets.ASC_APP_ID }} \
+            --bundle-id com.peoplenet.app \
+            --bundle-version "$BUNDLE_VERSION" \
+            --bundle-short-version-string "$SHORT_VERSION" \
+            --apiKey ${{ secrets.ASC_KEY_ID }} \
+            --apiIssuer ${{ secrets.ASC_ISSUER_ID }}
+
+      - name: Subir IPA como artefacto (trazabilidad)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: peoplenet-${{ inputs.lane }}-build-${{ github.run_number }}
+          path: |
+            ios/App/build/ipa/*.ipa
+          retention-days: 14
+          if-no-files-found: ignore

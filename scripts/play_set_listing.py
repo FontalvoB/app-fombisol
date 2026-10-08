@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""
+play_set_listing.py — Publica el store listing de Google Play vía API (REST puro).
+
+Textos + imágenes por idioma desde el repo:
+  android/app/src/main/play/listings/{es-419,en-US}/{short,full}-description.txt
+  android/app/src/main/play/icon-512.png                    (icono Play 512×512)
+  android/app/src/main/play/feature-graphic.jpeg            (1024×500)
+  android/app/src/main/play/screens/*.jpeg                  (teléfono, 1080×2340)
+
+Uso:
+  python3 scripts/play_set_listing.py [--dry-run]
+
+Flujo: edits.insert → listings.update (textos) → listingsImages (2 fases por
+imagen) → commit. Alternaba con el AAB de android-prod: el listing es global
+(no depende de una versión).
+"""
+import base64
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+import uuid
+
+APP_ID = "com.peoplenet.app"
+IMPERSONATE_SA = "play-publisher-net@peoplenet-510915.iam.gserviceaccount.com"
+ANDROIDPUBLISHER = "https://www.googleapis.com/auth/androidpublisher"
+BASE = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
+UPLOAD_BASE = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications"
+ADC_PATH = os.environ.get(
+    "GOOGLE_ADC_FILE",
+    os.path.expanduser("~/.config/gcloud/application_default_credentials.json"))
+
+PLAY_DIR = os.path.join(os.path.dirname(__file__), "..", "android/app/src/main/play")
+LANGS = ("es-419", "en-US")
+
+
+def die(msg, hint=None):
+    print(f"✗ {msg}")
+    if hint:
+        print(hint)
+    sys.exit(1)
+
+
+def adc_user_token():
+    if not os.path.exists(ADC_PATH):
+        die("No existe ADC de gcloud.", "Ejecuta:\n  gcloud auth application-default login")
+    d = json.load(open(ADC_PATH))
+    if d.get("type") != "authorized_user":
+        die(f"ADC es '{d.get('type')}' y debe ser 'authorized_user'.",
+            "Regenera con:  gcloud auth application-default login")
+    body = urllib.parse.urlencode({
+        "client_id": d["client_id"], "client_secret": d["client_secret"],
+        "refresh_token": d["refresh_token"], "grant_type": "refresh_token",
+    }).encode()
+    try:
+        r = json.load(urllib.request.urlopen(
+            urllib.request.Request("https://oauth2.googleapis.com/token", data=body)))
+        return r["access_token"]
+    except urllib.error.HTTPError as e:
+        die(f"Refresh del token de usuario falló ({e.code})", e.read().decode()[:300])
+
+
+def sa_token(user_token):
+    body = json.dumps({"delegates": [], "scope": [ANDROIDPUBLISHER], "lifetime": "3600s"}).encode()
+    req = urllib.request.Request(
+        "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+        f"{IMPERSONATE_SA}:generateAccessToken",
+        data=body, method="POST",
+        headers={"Authorization": f"Bearer {user_token}", "Content-Type": "application/json"})
+    try:
+        r = json.load(urllib.request.urlopen(req))
+        return r["accessToken"]
+    except urllib.error.HTTPError as e:
+        die("Impersonación falló", e.read().decode()[:300])
+
+
+class PlayApi:
+    def __init__(self, token):
+        self.token = token
+
+    def call(self, method, path, body=None, ok_empty=False):
+        req = urllib.request.Request(
+            f"{BASE}/{APP_ID}{path}",
+            data=json.dumps(body).encode() if body is not None else None,
+            method=method,
+            headers={"Authorization": f"Bearer {self.token}",
+                     "Content-Type": "application/json"})
+        try:
+            resp = urllib.request.urlopen(req)
+            raw = resp.read()
+            return {} if (ok_empty and (resp.status == 204 or not raw)) else json.loads(raw)
+        except urllib.error.HTTPError as e:
+            raw = e.read().decode()
+            try:
+                err = json.loads(raw).get("error", {})
+                raise RuntimeError(f"{method} {path} → {e.code}: {err.get('message', raw[:200])}")
+            except json.JSONDecodeError:
+                raise RuntimeError(f"{method} {path} → {e.code}: {raw[:200]}")
+
+    def image_init(self, edit_id, lang, image_type):
+        """Devuelve la upload URL para una imagen del listing (2 fases)."""
+        url = (f"{BASE}/{APP_ID}/edits/{edit_id}/listings/{lang}/listingsImages/{image_type}")
+        req = urllib.request.Request(
+            url, data=b"{}", method="POST",
+            headers={"Authorization": f"Bearer {self.token}",
+                     "Content-Type": "application/json"})
+        try:
+            return json.load(urllib.request.urlopen(req))["uploadUrl"]
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"image_init {image_type} [{lang}] → {e.code}: {e.read().decode()[:200]}")
+
+    def image_upload(self, upload_url, path):
+        """POST multipart/form-data del binario a la upload URL de la fase 1."""
+        boundary = uuid.uuid4().hex
+        data = open(path, "rb").read()
+        body = (f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="file"; filename="{os.path.basename(path)}"\r\n'
+                f"Content-Type: application/jpeg\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
+        req = urllib.request.Request(
+            upload_url, data=body, method="POST",
+            headers={"Authorization": f"Bearer {self.token}",
+                     "Content-Type": f"multipart/form-data; boundary={boundary}"})
+        try:
+            resp = urllib.request.urlopen(req)
+            print(f"    ✓ {os.path.basename(path)} ({len(data)//1024} KB)")
+            return resp.status
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"image_upload {os.path.basename(path)} → {e.code}: {e.read().decode()[:200]}")
+
+
+def parse_listing_texts():
+    entries = {}
+    for lang in LANGS:
+        d = os.path.join(PLAY_DIR, "listings", lang)
+        short = os.path.join(d, "short-description.txt")
+        full = os.path.join(d, "full-description.txt")
+        if not (os.path.exists(short) and os.path.exists(full)):
+            die(f"Faltan textos del listing: {d}")
+        title = "PeopleNet"
+        entries[lang] = {"title": title,
+                         "shortDescription": open(short).read().strip(),
+                         "fullDescription": open(full).read().strip()}
+        if len(entries[lang]["shortDescription"]) > 80:
+            die(f"short-description [{lang}] excede 80 chars")
+        if len(entries[lang]["fullDescription"]) > 4000:
+            die(f"full-description [{lang}] excede 4000 chars")
+    return entries
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+
+    listings = parse_listing_texts()
+    icon = os.path.join(PLAY_DIR, "icon-512.png")
+    feature = os.path.join(PLAY_DIR, "feature-graphic.jpeg")
+    screens_dir = os.path.join(PLAY_DIR, "screens")
+    screens = sorted(os.path.join(screens_dir, f) for f in os.listdir(screens_dir)
+                     if f.lower().endswith((".jpeg", ".jpg", ".png"))) if os.path.isdir(screens_dir) else []
+
+    for p, label, w, h in ((icon, "icono", 512, 512), (feature, "feature graphic", 1024, 500)):
+        if not os.path.exists(p):
+            die(f"Falta {label}: {p}")
+    print(f"• Textos listing: {', '.join(LANGS)}")
+    print(f"• Imágenes globales: {icon} + {feature}")
+    print(f"• Screenshots teléfono: {len(screens)} (1080×2340)")
+    if len(screens) < 2:
+        die("Google Play exige mínimo 2 screenshots de teléfono")
+
+    token = sa_token(adc_user_token())
+    print("✓ Autenticación OK (SA impersonada)")
+
+    if args.dry_run:
+        api = PlayApi(token)
+        edit = api.call("POST", "/edits")
+        try:
+            cur = api.call("GET", "/listings", ok_empty=True)
+            for l in cur.get("listings", []):
+                print(f"  listing [{l.get('language')}]: {l.get('title')}")
+        finally:
+            api.call("DELETE", f"/edits/{edit['id']}", ok_empty=True)
+        print("✓ Dry-run: API operativa. No se cambió nada.")
+        return
+
+    api = PlayApi(token)
+    edit = api.call("POST", "/edits")
+    eid = edit["id"]
+    print(f"✓ Edit creado: {eid}")
+
+    try:
+        for lang, data in listings.items():
+            api.call("PUT", f"/edits/{eid}/listings/{lang}", {**data, "language": lang})
+            print(f"✓ Textos [{lang}] actualizados")
+
+        shared = [("icon", (icon, "image/png")), ("featureGraphic", (feature, "image/jpeg"))]
+        for lang in LANGS:
+            # Imágenes globales (icon + feature): un upload por tipo e idioma
+            for img_type, (path, mime) in shared:
+                up = api.image_init(eid, lang, img_type)
+                api.image_upload(up, path)
+                print(f"✓ {img_type} [{lang}]")
+
+            if screens:
+                up = api.image_init(eid, lang, "phoneScreenshots")
+                for path in screens:
+                    api.image_upload(up, path)
+                print(f"✓ phoneScreenshots [{lang}] × {len(screens)}")
+
+        api.call("POST", f"/edits/{eid}:commit", ok_empty=True)
+        print(f"✓ COMMIT OK — listing publicado en {', '.join(LANGS)}")
+    finally:
+        try:
+            urllib.request.urlopen(urllib.request.Request(
+                f"{BASE}/{APP_ID}/edits/{eid}", method="DELETE",
+                headers={"Authorization": f"Bearer {token}"}))
+            print("(edit abandonado)")
+        except Exception:
+            pass
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except RuntimeError as e:
+        die(str(e))
