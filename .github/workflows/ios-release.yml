@@ -43,6 +43,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Limpiar artefactos/caches (garantizar build del diseño vigente)
+        run: |
+          npm cache clean --force 2>/dev/null || true
+          rm -rf node_modules dist .vite
+          rm -rf ios/App/App/public
+          echo "Caches limpiados"
+
       - name: Node 22 + npm ci
         uses: actions/setup-node@v4
         with:
@@ -102,10 +109,12 @@ jobs:
           mkdir -p ~/private_keys
           cp /tmp/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 ~/private_keys/
 
-      - name: Build number monotónico (100 + run number)
+      - name: Build number monotónico GLOBAL (epoch — TestFlight y App Store sin colisión)
         working-directory: ios/App
         run: |
-          BUILD_NUMBER=$((100 + ${{ github.run_number }}))
+          # date +%s ≈ 1.79×10⁹ en 2026, < límite Apple (2×10⁹), SIEMPRE creciente
+          # y único entre workflows (los run_number de cada workflow chocan).
+          BUILD_NUMBER=$(date +%s)
           echo "Build number: $BUILD_NUMBER"
           xcrun agvtool new-version -all "$BUILD_NUMBER"
 

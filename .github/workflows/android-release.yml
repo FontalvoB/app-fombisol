@@ -66,6 +66,9 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
+      - name: Limpiar caches Gradle del build anterior
+        run: rm -rf android/app/build android/.gradle build dist .vite 2>/dev/null || true
+
       - name: Componentes SDK (insurance)
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
