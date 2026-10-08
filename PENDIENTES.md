@@ -2,6 +2,9 @@
 
 _Fecha: 2026-10-08 · Actualizar casillas al completar ✅ / ⛔_
 
+> CI Android **verificado 2026-10-08 17:01**: builds develop + main publicando en pista
+> interna (versionCode 3000006/3000007) tras fix de `GOOGLE_ADC_JSON` en base64.
+
 ## Google Play — bloqueantes para publicar producción
 
 | # | Pendiente | Dónde | Estado |
