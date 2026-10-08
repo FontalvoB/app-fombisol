@@ -196,25 +196,21 @@ def main():
             print(f"✓ Textos [{lang}] actualizados")
 
         shared = [("icon", (icon, "image/png")), ("featureGraphic", (feature, "image/jpeg"))]
-        phone = [(None, (p, "image/jpeg")) for p in screens]
-        # Google sube TODAS las phoneScreenshots en UNA sola llamada (zipbase64)
         for lang in LANGS:
-            # Globales (icon + feature): un solo upload por tipo, remplita ambos idiomas
+            # Imágenes globales (icon + feature): un upload por tipo e idioma
             for img_type, (path, mime) in shared:
                 up = api.image_init(eid, lang, img_type)
                 api.image_upload(up, path)
                 print(f"✓ {img_type} [{lang}]")
-        if phone:
-            for lang in LANGS:
-                up = api.image_init(eid, lang, "phoneScreenshots")
-                # listingImages phoneScreenshots: una imagen por uploadUrl (la API
-                # acepta 1 archivo por llamada; repetimos con la misma URL por imagen)
-                for _, (path, mime) in phone:
-                    api.image_upload(up, path)
-                print(f"✓ phoneScreenshots [{lang}] × {len(phone)}")
 
-            api.call("POST", f"/edits/{eid}:commit", ok_empty=True)
-            print(f"✓ COMMIT OK — listing publicado en {', '.join(LANGS)}")
+            if screens:
+                up = api.image_init(eid, lang, "phoneScreenshots")
+                for path in screens:
+                    api.image_upload(up, path)
+                print(f"✓ phoneScreenshots [{lang}] × {len(screens)}")
+
+        api.call("POST", f"/edits/{eid}:commit", ok_empty=True)
+        print(f"✓ COMMIT OK — listing publicado en {', '.join(LANGS)}")
     finally:
         try:
             urllib.request.urlopen(urllib.request.Request(

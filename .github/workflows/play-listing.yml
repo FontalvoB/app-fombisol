@@ -1,0 +1,49 @@
+# Listing Google Play — MANUAL (workflow_dispatch).
+#
+# Sube TEXTOS + IMÁGENES del listing vía API (play_set_listing.py):
+#   - textos es-419/en-US (android/app/src/main/play/listings/)
+#   - icono 512 + feature graphic 1024×500 + screenshots teléfono
+# NO toca pistas ni versiones de app (eso es android-prod / auto-deploy).
+#
+# Requiere App content 100% en consola para que Play acepte el listing.
+name: play-listing (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = solo validar (no cambia el listing)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: android-play
+  cancel-in-progress: false
+
+jobs:
+  listing:
+    name: listing → Play (dry_run=${{ inputs.dry_run }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GOOGLE_ADC_FILE: /tmp/adc.json
+      LANG: en_US.UTF-8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Autenticación Play (ADC)
+        env:
+          GOOGLE_ADC_JSON: ${{ secrets.GOOGLE_ADC_JSON }}
+        run: echo "$GOOGLE_ADC_JSON" | base64 --decode > /tmp/adc.json
+
+      - name: Publicar listing (dry-run=${{ inputs.dry_run }})
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="--dry-run"; fi
+          python3 scripts/play_set_listing.py $ARGS
