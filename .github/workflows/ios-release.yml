@@ -77,21 +77,22 @@ jobs:
           security cms -D -i /tmp/com.peoplenet.app-appstore.mobileprovision | grep -E "<key>Name|ExpirationDate" -A1 | head -4
 
       - name: Importar certificado de distribución (llavero efímero)
+        timeout-minutes: 8
         env:
           P12_B64: ${{ secrets.APPLE_DIST_P12_BASE64 }}
           P12_PASS: ${{ secrets.APPLE_DIST_P12_PASSWORD }}
         run: |
+          set -ex
           echo "$P12_B64" | base64 --decode > /tmp/dist.p12
-          KC="$RUNNER_TEMP/signing.keychain-db"
+          KC="$RUNNER_TEMP/ios-signing.keychain"
           KC_PASS=$(openssl rand -hex 32)
-          security create-keychain -p "$KC_PASS" "$KC"
-          security set-keychain-settings -t 0 "$KC" || true
-          security unlock-keychain -p "$KC_PASS" "$KC"
-          security import /tmp/dist.p12 -P "$P12_PASS" -A -t cert -f pkcs12 -k "$KC"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_PASS" "$KC" > /dev/null 2>&1
-          EXISTING=$(security list-keychains -d user | sed 's/"//g' | tr '\n' ' ')
-          security list-keychains -d user -s "$KC" $EXISTING
-          security find-identity -v -p codesigning "$KC" | head -3
+          security create-keychain -p "$KC_PASS" "$KC" < /dev/null
+          security set-keychain-settings -lut 7200 "$KC" < /dev/null
+          security unlock-keychain -p "$KC_PASS" "$KC" < /dev/null
+          security import /tmp/dist.p12 -P "$P12_PASS" -A -t cert -f pkcs12 -k "$KC" < /dev/null
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" "$KC" < /dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | sed 's/"//g' | tr '\n' ' ') < /dev/null
+          security find-identity -v -p codesigning "$KC"
           echo "KC_PATH=$KC" >> "$GITHUB_ENV"
 
       - name: Materializar API key de App Store Connect
@@ -109,6 +110,7 @@ jobs:
           xcrun agvtool new-version -all "$BUILD_NUMBER"
 
       - name: Archive (Release, sin firmar — la firma ocurre en export)
+        timeout-minutes: 25
         working-directory: ios/App
         run: |
           xcodebuild -project App.xcodeproj -scheme App -configuration Release \
@@ -118,6 +120,7 @@ jobs:
             archive
 
       - name: Export IPA (firma manual — cert y perfil de distribución)
+        timeout-minutes: 15
         working-directory: ios/App
         run: |
           cat > build/exportOptions.plist <<'EOPLIST'
