@@ -117,7 +117,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             archive
 
-      - name: Export IPA (firma manual: cert + perfil de distribución)
+      - name: Export IPA (firma manual — cert y perfil de distribución)
         working-directory: ios/App
         run: |
           cat > build/exportOptions.plist <<'EOPLIST'
