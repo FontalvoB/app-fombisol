@@ -1,0 +1,17 @@
+PeopleNet es la app móvil de gestión de personal de tu organización, pensada para que los colaboradores consulten y gestionen su información laboral desde el teléfono, en cualquier momento y lugar.
+
+Con PeopleNet puedes:
+
+• Evaluaciones — responde y consulta tus evaluaciones de desempeño cuando se te asignen.
+• KPIs — revisa tus indicadores de desempeño con resultados claros y actualizados.
+• Solicitudes — envía y da seguimiento a tus solicitudes internas sin papeleo.
+• Documentos — consulta tus documentos y certificados laborales.
+• Perfil y cuenta — mantén tu información actualizada.
+
+La app está dirigida a colaboradores y equipos de organizaciones que ya usan la plataforma PeopleNet de su empresa. Para ingresar necesitas las credenciales que te entregó tu organización: no es un servicio público y no se permite el registro de cuentas anónimas.
+
+Las cuentas las administra la organización usuaria: el personal autorizado crea y gestiona los accesos desde la plataforma web de PeopleNet, y los datos se procesan de forma segura con cifrado en tránsito (HTTPS).
+
+PeopleNet acompaña la plataforma de gestión KPI de tu empresa: menos papeleo, más claridad, todo en un solo lugar.
+
+Si tienes problemas para acceder o necesitas soporte, contacta al administrador de PeopleNet de tu organización o escribe a soporte@peoplenet.info.

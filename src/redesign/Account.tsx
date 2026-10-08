@@ -109,6 +109,23 @@ function employeeStatusLabel(
   return map[status.toLowerCase()] ?? status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+/** Icono del chip según el tipo real del certificado; desconocidos → genérico. */
+function certTypeIcon(type: string | null): string {
+  switch (type?.toLowerCase() ?? "") {
+    case "labor":
+      return "badge";
+    case "vacaciones":
+      return "flight_takeoff";
+    case "nómina":
+    case "nomina":
+      return "payments";
+    case "estudio":
+      return "school";
+    default:
+      return "workspace_premium";
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // M8 — Certificados (/dashboard/certificates)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -191,50 +208,63 @@ export function Certificates(_props: { name?: string }) {
         (certificates.state.data ?? []).length === 0 && (
           <div className="pn-empty">
             <Icon name="workspace_premium" size={36} />
-            <h3>Aún no tienes certificados</h3>
+            <h2>Aún no tienes certificados</h2>
             <p>Cuando la empresa expida constancias aparecerán aquí.</p>
           </div>
         )}
       {certificates.state.status === "success" &&
         (certificates.state.data ?? []).length > 0 && (
-          <div className="pn-doc-grid">
+          <div className="pn-doc-grid cert-grid">
             {(certificates.state.data ?? []).map((cert, i) => (
-              <article className="pn-panel" key={cert.id ?? `cert-${i}`}>
-                <div className="panel-heading">
-                  <span className="pn-eyebrow">
-                    {cert.certificateType ?? "Sin tipo"}
+              <article
+                className="cert-card"
+                key={cert.id ?? `cert-${i}`}
+                aria-label={`Certificado ${cert.certificateNumber ?? "sin número"}`}
+              >
+                <div className="cert-top">
+                  <span className="cert-chip" aria-hidden="true">
+                    <Icon name={certTypeIcon(cert.certificateType)} size={22} />
                   </span>
+                  <div className="cert-titles">
+                    <span className="pn-eyebrow">
+                      {cert.certificateType ?? "Sin tipo"}
+                    </span>
+                    <h2>{cert.certificateNumber ?? "Sin número"}</h2>
+                  </div>
                   <Badge>{certStatusLabel(cert.status)}</Badge>
                 </div>
-                <h3 style={{ margin: "14px 0 6px" }}>
-                  {cert.certificateNumber ?? "Sin número"}
-                </h3>
-                <p className="small-muted">
-                  {wireDateTime(cert.createdAt)}
-                </p>
-                <hr />
-                <div style={{ fontSize: 12, lineHeight: 2, color: "#5a6b7d" }}>
-                  <div>
-                    <Icon name="business" size={16} />{" "}
-                    {cert.companyName ?? "Sin dato"}
-                  </div>
-                  <div>
-                    <Icon name="calendar_month" size={16} /> Expedido el{" "}
-                    {cert.issueDate ? date(cert.issueDate) : "Sin dato"}
-                  </div>
-                  {cert.certifyingOfficer && (
-                    <div>
-                      <Icon name="badge" size={16} /> {cert.certifyingOfficer}
-                    </div>
-                  )}
-                </div>
-                <div className="form-actions">
+                <ul className="cert-meta">
+                  <li>
+                    <Icon name="business" size={16} />
+                    <span className="cert-meta-label">Empresa</span>
+                    <strong>{cert.companyName ?? "Sin dato"}</strong>
+                  </li>
+                  <li>
+                    <Icon name="calendar_month" size={16} />
+                    <span className="cert-meta-label">Expedido</span>
+                    <strong>
+                      {cert.issueDate ? date(cert.issueDate) : "Sin dato"}
+                    </strong>
+                  </li>
+                  {cert.certifyingOfficer ? (
+                    <li>
+                      <Icon name="history_edu" size={16} />
+                      <span className="cert-meta-label">Autorizó</span>
+                      <strong>{cert.certifyingOfficer}</strong>
+                    </li>
+                  ) : null}
+                  <li>
+                    <Icon name="schedule" size={16} />
+                    <span className="cert-meta-label">Registrado</span>
+                    <strong>{wireDateTime(cert.createdAt)}</strong>
+                  </li>
+                </ul>
+                <div className="cert-actions">
                   <Button
                     secondary
                     disabled={
                       cert.id == null ||
-                      (downloadStatus === "loading" &&
-                        downloadingId === cert.id)
+                      (downloadStatus === "loading" && downloadingId === cert.id)
                     }
                     onClick={() => void handleDownload(cert)}
                   >
@@ -323,7 +353,7 @@ export function Notifications(_props: {
                 <span className="small-muted">
                   {wireDateTime(n.timestamp)}
                 </span>
-                <h3>{n.title ?? "Sin título"}</h3>
+                <h2>{n.title ?? "Sin título"}</h2>
                 <p>{n.description ?? "Sin detalle."}</p>
               </div>
             </div>
@@ -331,7 +361,7 @@ export function Notifications(_props: {
           {feed.length === 0 && (
             <div className="pn-empty">
               <Icon name="done_all" size={36} />
-              <h3>Sin actividad por ahora.</h3>
+              <h2>Sin actividad por ahora.</h2>
               <p>Los movimientos del espacio aparecerán aquí.</p>
             </div>
           )}

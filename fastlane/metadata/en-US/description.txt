@@ -1,0 +1,17 @@
+PeopleNet is your company's mobile people-management platform. It brings together your performance indicators, your time-off requests and all your work information in one place — fast, clear and secure.
+
+With PeopleNet you can:
+
+• Real-time KPIs — track your performance indicators with clear, up-to-date charts.
+• Permissions & requests — create and follow vacation, leave and medical-appointment requests; see their status instantly.
+• Documents — access your work documents from anywhere.
+• Evaluations — review your performance evaluations and history.
+• Certificates — download your work certificates whenever you need them.
+• Team — find colleagues by area and role.
+• Account — manage your profile and personal information.
+
+Built for teams that want less paperwork and more clarity: your requests, metrics and documents at your fingertips.
+
+Access requires an account provided by your organization. All data is transmitted over an encrypted (HTTPS) connection.
+
+Connecting people and possibilities.

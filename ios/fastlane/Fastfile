@@ -96,4 +96,39 @@ platform :ios do
       submit_for_review: false, # NUNCA auto-publicar: decisión manual del equipo
     )
   end
+
+  # Envía la versión 1.0 a revisión de Apple (App Store).
+  #
+  # Sube TODA la metadata del repo (fastlane/metadata): textos, keywords,
+  # URLs, copyright e información para App Review (cuenta demo). Requiere
+  # screenshots en fastlane/metadata/screenshots/<locale>/ y un build ya
+  # subido a ASC (el build number lo pasa el workflow).
+  #
+  # Uso: fastlane ios submit_appstore submit_for_review:true build_number:105
+  #      (con submit_for_review:false valida y sube metadata sin enviar)
+  lane :submit_appstore do |options|
+    api_key = asc_api_key
+    submit = options[:submit_for_review] == true
+    deliver(
+      api_key: api_key,
+      app_identifier: "com.peoplenet.app",
+      app_version: "1.0",
+      build_number: options[:build_number] ? options[:build_number].to_s : nil,
+      metadata_path: "./metadata",
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: submit,
+      # Publicación manual tras la aprobación (decisión del equipo).
+      automatic_release: false,
+      # CI no interactivo: sin prompts, sin validación de IPAs antiguas.
+      force: true,
+      precheck_include_in_app_purchases: false,
+      # Sin IDFA (no hay publicidad ni tracking) y sin cripto exportable
+      # (el binario ya lo declara: ITSAppUsesNonExemptEncryption=false).
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false,
+      },
+    )
+  end
 end

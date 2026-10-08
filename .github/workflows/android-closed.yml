@@ -1,0 +1,35 @@
+# Prueba cerrada (closed testing) — MANUAL (workflow_dispatch).
+#
+# Pista "closed" de Google Play: revisión ligera de Google (~1-3 días la primera vez).
+# Útil para QA amplia con hasta 200 listas × 2000 testers y para pre-launch.
+# Cuenta ORGANIZACIÓN: NO requiere el gate de 12 testers × 14 días (eso aplica solo
+# a cuentas personales creadas después del 13-nov-2023).
+#
+# status=draft: el AAB queda en la pista como borrador → revisar y "Publicar" en consola.
+# status=completed: se lanza a los testers automáticamente tras la revisión.
+#
+# El opt-in link solo aparece cuando la release está Publicada.
+name: android-closed (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      status:
+        description: "Estado del release en la pista"
+        type: choice
+        options: [draft, completed, halted]
+        default: draft
+
+concurrency:
+  group: android-play # global: serializa builds, versionCode siempre creciente
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/android-release.yml
+    with:
+      mode: production
+      track: closed
+      version_base: 3000000
+      release_status: ${{ inputs.status }}
+    secrets: inherit

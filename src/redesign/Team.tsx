@@ -289,13 +289,13 @@ export function Team() {
           <div>
             <span className="pn-eyebrow">ÁREA</span>
             <h3>{area.name ?? "Sin nombre"}</h3>
-            <p>
-              {area.totalPeopleCount != null
-                ? `${area.totalPeopleCount} personas`
-                : "Total sin dato"}
-              {area.subareasCount != null ? ` · ${area.subareasCount} subáreas` : ""}
-            </p>
           </div>
+          <span className="org-count">
+            {area.totalPeopleCount != null
+              ? `${area.totalPeopleCount} personas`
+              : "Sin dato"}
+            {area.subareasCount != null ? ` · ${area.subareasCount} sub.` : ""}
+          </span>
         </div>
         {renderHeads(area.heads, `Jefatura de ${areaContext}`)}
         {area.employees?.length ? (
@@ -368,12 +368,12 @@ export function Team() {
           <div>
             <span className="pn-eyebrow">SUBÁREA</span>
             <h3>{subarea.name ?? "Sin nombre"}</h3>
-            <p>
-              {subarea.employeesCount != null
-                ? `${subarea.employeesCount} personas`
-                : "Total sin dato"}
-            </p>
           </div>
+          <span className="org-count">
+            {subarea.employeesCount != null
+              ? `${subarea.employeesCount} personas`
+              : "Sin dato"}
+          </span>
         </div>
         {renderHeads(subarea.heads, `Jefatura de ${subContext}`)}
         {branch?.expanded ? (
@@ -542,6 +542,10 @@ export function Team() {
                         setSelectedPersonContext(nodeTypeLabel(r.nodeType));
                       }}
                     >
+                      <Avatarish
+                        initials={initials(r.person?.fullName ?? null)}
+                        tone={1}
+                      />
                       <strong>{r.person?.fullName ?? "Sin nombre"}</strong>
                       <p>{r.person?.position ?? "Sin cargo"}</p>
                       <span>

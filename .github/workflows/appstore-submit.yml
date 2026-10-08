@@ -1,0 +1,63 @@
+# Envía PeopleNet v1.0 a REVISIÓN de Apple (App Store).
+#
+# Ejecuta el lane `submit_appstore` con deliver: sube metadata (textos,
+# keywords, URLs, info de App Review con cuenta demo), screenshots y
+# selecciona el build indicado. La publicación tras aprobación queda
+# MANUAL (automatic_release: false).
+#
+# Prerequisitos (ver docs/appstore/CHECKLIST-SUBMIT.md):
+#   1. Build subido a ASC por el workflow `appstore` (push a main).
+#   2. Screenshots 1290×2796 (o 1320×2868) en
+#      fastlane/metadata/screenshots/es-419/ y copiados a en-US/.
+#   3. fastlane/metadata/review_information/ con cuenta demo real.
+#   4. fastlane/metadata/*/privacy_url.txt con URL real.
+#   5. Age rating + App Privacy completados en ASC (solo una vez).
+#
+name: appstore-submit
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_for_review:
+        description: "true = enviar a revisión · false = solo subir metadata/validar (dry-run)"
+        required: true
+        default: "false"
+        type: string
+      build_number:
+        description: "Build number a adjuntar (ej. 105). Vacío = el más reciente procesado"
+        required: false
+        default: ""
+        type: string
+
+concurrency:
+  group: appstore-submit
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    name: deliver → App Store (submit_for_review=${{ inputs.submit_for_review }})
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      FASTLANE_SKIP_UPDATE_CHECK: "true"
+      FASTLANE_OPT_OUT_USAGE: "true"
+      LANG: en_US.UTF-8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Fastlane
+        run: |
+          gem install fastlane --no-document 2>/dev/null || sudo gem install fastlane --no-document
+          fastlane --version
+
+      - name: Submit / dry-run
+        working-directory: ios/fastlane
+        run: |
+          fastlane ios submit_appstore \
+            submit_for_review:${{ inputs.submit_for_review }} \
+            build_number:"${{ inputs.build_number }}"

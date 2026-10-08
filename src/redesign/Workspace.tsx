@@ -259,7 +259,7 @@ export default function Workspace() {
               </div>
             )}
           </div>
-          <span className="pn-demo">Espacio demo</span>
+          <span className="pn-demo">Espacio de trabajo</span>
           <Link
             className="pn-icon-button notification-button"
             aria-label="Ver notificaciones"

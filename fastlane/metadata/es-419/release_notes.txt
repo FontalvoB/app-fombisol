@@ -1,0 +1,1 @@
+Primera versión en App Store: KPIs, permisos y solicitudes, documentos, evaluaciones, certificados y directorio de equipo.

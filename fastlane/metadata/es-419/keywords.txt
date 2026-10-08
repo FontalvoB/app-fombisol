@@ -1,0 +1,1 @@
+rrhh,kpis,recursos humanos,solicitudes,vacaciones,evaluaciones,certificados,equipo,trabajo

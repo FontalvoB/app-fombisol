@@ -1,0 +1,17 @@
+— App Review information (English below) —
+
+ES: PeopleNet es la app móvil de gestión de talento humano de Fombisol. Requiere inicio de sesión: el acceso se habilita con la cuenta de demostración indicada arriba (usuario y contraseña). Las cuentas se aprovisionan desde la plataforma web corporativa; NO existe registro abierto por diseño, ya que la app está dirigida a colaboradores de organizaciones cliente.
+
+Cuenta demo: incluye datos de ejemplo (KPIs, solicitudes, documentos, evaluaciones, certificados) para explorar todas las pantallas sin afectar información real.
+
+La app se conecta al backend https://peoplenet.info/api exclusivamente por HTTPS (ATS habilitado, sin excepciones). No solicita permisos de cámara, ubicación, fotos ni micrófono. No incluye compras dentro de la app, publicidad ni SDKs de terceros.
+
+Si necesita un período de revisión extendido o una cuenta con otro rol (supervisor/aprobador), contáctenos al correo indicado — respondemos en menos de 24 horas.
+
+EN: PeopleNet is Fombisol's mobile people-management app. It requires sign-in: use the demo account above (username and password). Accounts are provisioned from the corporate web platform; there is no open sign-up by design because the app is intended for employees of client organizations.
+
+The demo account includes sample data (KPIs, requests, documents, evaluations, certificates) so every screen can be explored without touching real information.
+
+The app talks to https://peoplenet.info/api over HTTPS only (ATS enforced, no exceptions). It requests no camera, location, photos or microphone permissions. It contains no in-app purchases, ads or third-party SDKs.
+
+If you need an extended review period or an account with another role (supervisor/approver), contact us at the email above — we respond within 24 hours.

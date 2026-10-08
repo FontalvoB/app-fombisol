@@ -27,6 +27,11 @@ on:
         required: false
         type: number
         default: 3000000
+      release_status:
+        description: "Estado del release en la pista (draft = queda pendiente de Publicar en consola)"
+        required: false
+        type: string
+        default: "completed"
 
 jobs:
   android:
@@ -106,7 +111,8 @@ jobs:
           python3 scripts/play_publish.py \
             --aab android/app/build/outputs/bundle/release/app-release.aab \
             --version-code "$VERSION_CODE" \
-            --track ${{ inputs.track }}
+            --track ${{ inputs.track }} \
+            --status ${{ inputs.release_status }}
 
       - name: Subir AAB como artefacto (trazabilidad)
         if: always()
