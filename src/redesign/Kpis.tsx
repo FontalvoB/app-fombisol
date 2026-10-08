@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Icon,
   Button,
@@ -169,6 +170,25 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
           </select>
         )}
       </div>
+      <Link className="editorial-strategy" to="/dashboard/documents">
+        <img
+          src="/images/people/estrategia.jpg"
+          alt=""
+          width="1536"
+          height="1024"
+        />
+        <div>
+          <span className="human-eyebrow">CADA META TIENE UN PROPÓSITO</span>
+          <h2>Tu aporte nos lleva más lejos.</h2>
+          <p>
+            Descubre cómo tus objetivos conectan con los documentos de la
+            organización.
+          </p>
+          <span className="editorial-strategy-link">
+            Ver la biblioteca <Icon name="arrow_forward" size={17} />
+          </span>
+        </div>
+      </Link>
       {period && (
         <div className="pn-kpi-overview">
           <section className="vivid-score-card">

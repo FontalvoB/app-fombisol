@@ -80,6 +80,22 @@ function categoryIcon(category: string | null): string {
   return CATEGORY_ICONS[key] ?? "description";
 }
 
+/** Portada editorial por categoría. Solo presentación; el contenido sigue siendo el del servidor. */
+const CATEGORY_COVERS: Record<string, string> = {
+  policies: "integridad",
+  procedures: "estrategia",
+  codes: "convivencia",
+  guidelines: "bienestar-activo",
+  templates: "seguridad-digital",
+  certifications: "trayectoria",
+  other: "vacaciones",
+};
+
+function categoryCover(category: string | null): string {
+  const key = category?.toLowerCase().trim() ?? "";
+  return CATEGORY_COVERS[key] ?? "convivencia";
+}
+
 /**
  * Etiqueta de categoría: si el catálogo del servidor trae label para el value,
  * se usa; si no, se muestra la categoría tal como está almacenada (el fixture
@@ -274,16 +290,16 @@ export function Documents(_props: { reads?: string[] }) {
         description="Información útil, políticas claras y todo lo que necesitas conocer."
       />
       {featured && featured.id != null && (
-        <Link className="vivid-featured-doc" to={"/dashboard/documents/" + featured.id}>
-          <div className="featured-book">
-            <Icon name={categoryIcon(featured.category)} size={38} />
-            <span>
-              Así somos.
-              <br />
-              <strong>Así crecemos.</strong>
-            </span>
-            <small>PEOPLENET</small>
-          </div>
+        <Link
+          className="editorial-library-feature"
+          to={"/dashboard/documents/" + featured.id}
+        >
+          <img
+            src={`/images/people/${categoryCover(featured.category)}.jpg`}
+            alt=""
+            width="1536"
+            height="1024"
+          />
           <div>
             <span className="pn-eyebrow">TU PRÓXIMA LECTURA</span>
             <h2>{featured.title ?? "Sin título"}</h2>
@@ -298,7 +314,6 @@ export function Documents(_props: { reads?: string[] }) {
               Abrir <Icon name="arrow_forward" size={18} />
             </span>
           </div>
-          <i className="featured-orbit" />
         </Link>
       )}
       {documents.state.status === "success" && (
@@ -375,23 +390,27 @@ export function Documents(_props: { reads?: string[] }) {
           </Button>
         </div>
       )}
-      <div className="pn-doc-grid">
+      <div className="pn-doc-grid editorial-doc-grid">
         {(list ?? []).map((d, i) => {
           const read = readStateOf(d);
           return (
             <Link
-              className="pn-panel document-card"
+              className="pn-panel document-card editorial-doc-card"
               key={d.id ?? `doc-${i}`}
               to={"/dashboard/documents/" + d.id}
             >
-              <div className={`document-cover cover-${i % 3}`}>
-                <div className="doc-lines">
-                  <i />
-                  <i />
-                  <i />
-                </div>
-                <Icon name={categoryIcon(d.category)} size={46} />
-                <span>PEOPLENET / BIBLIOTECA</span>
+              <div className="editorial-doc-cover">
+                <img
+                  src={`/images/people/${categoryCover(d.category)}.jpg`}
+                  alt=""
+                  width="1536"
+                  height="1024"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className="editorial-doc-icon">
+                  <Icon name={categoryIcon(d.category)} size={22} />
+                </span>
               </div>
               <div className="document-card-body">
                 <div className="panel-heading">
@@ -696,6 +715,13 @@ export function Reader(_props: {
             <span>DOCUMENTO INTERNO</span>
           </div>
           <h1>{doc.title ?? "Sin título"}</h1>
+          <img
+            className="editorial-reader-photo"
+            src={`/images/people/${categoryCover(doc.category)}.jpg`}
+            alt=""
+            width="1536"
+            height="1024"
+          />
           <p className="paper-intro">
             {doc.description ?? "Sin descripción del servidor."}
           </p>

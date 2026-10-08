@@ -215,6 +215,25 @@ export function Requests() {
           </Link>
         }
       />
+      <div className="human-wellbeing-banner">
+        <img
+          src="/images/people/wellbeing.jpg"
+          alt="Una mujer disfruta de una pausa al aire libre"
+          width="1536"
+          height="1024"
+        />
+        <div>
+          <span className="human-eyebrow">TIEMPO PARA TI</span>
+          <h3>Un descanso también es avanzar.</h3>
+          <p>
+            Organiza permisos y vacaciones desde una solicitud y sigue el
+            estado real de cada trámite.
+          </p>
+          <Link className="human-rest-link" to="/dashboard/requests/new">
+            Planea tu descanso <Icon name="arrow_forward" size={17} />
+          </Link>
+        </div>
+      </div>
       <section className="pn-panel">
         <div className="pn-toolbar padded">
           <Tabs items={[...TAB_ITEMS]} value={tab} set={(v) => setTab(v as Tab)} />

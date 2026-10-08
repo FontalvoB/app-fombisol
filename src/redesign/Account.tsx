@@ -175,6 +175,14 @@ export function Certificates(_props: { name?: string }) {
         title="Tus certificados, sin vueltas."
         description="Constancias reales expedidas por la empresa, listas para descargar."
       />
+      <img
+        className="editorial-certificate-photo"
+        src="/images/people/trayectoria.jpg"
+        alt="Una profesional de talento humano entrega una carpeta a un colaborador"
+        width="1536"
+        height="1024"
+        loading="lazy"
+      />
       {/* FIX-1 B (admin sin employeeId): estado explícito en vez de área vacía. */}
       {employeeId == null ? (
         <LoadingNote label="Los certificados requieren un colaborador asociado a tu usuario." />

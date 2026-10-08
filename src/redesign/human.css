@@ -1,0 +1,493 @@
+/* Editorial photography supports the actions; copy always has a solid surface. */
+.editorial-library-feature {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #045c94;
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  color: white;
+}
+.editorial-library-feature > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.editorial-library-feature > div {
+  padding: 30px 36px;
+  align-self: center;
+}
+.editorial-library-feature .pn-eyebrow {
+  color: #ffdb83;
+}
+.editorial-library-feature h2 {
+  font-size: 34px;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin: 15px 0;
+}
+.editorial-library-feature p {
+  color: #dcecf7;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.editorial-library-feature .featured-read {
+  color: #ffdb83;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.editorial-doc-card.document-card {
+  display: flex;
+  flex-direction: column;
+}
+.editorial-doc-cover {
+  position: relative;
+  aspect-ratio: 1.85;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e8edf3;
+}
+.editorial-doc-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  transition: transform 0.45s ease;
+}
+.editorial-doc-icon {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #fff8e7;
+  color: #045c94;
+  box-shadow: 0 3px 12px #21305312;
+}
+.editorial-doc-card .document-card-body {
+  flex: 1;
+}
+.editorial-doc-card:hover .editorial-doc-cover img {
+  transform: scale(1.035);
+}
+.editorial-reader-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2;
+  object-fit: cover;
+  object-position: center 40%;
+  border-radius: 16px;
+  margin: 22px 0;
+}
+.editorial-certificate-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.5;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+.editorial-strategy {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff1cc;
+  margin-bottom: 22px;
+}
+.editorial-strategy > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.editorial-strategy > div {
+  padding: 20px 24px;
+}
+.editorial-strategy h2 {
+  color: #213053;
+  font-size: 21px;
+  letter-spacing: -0.5px;
+  margin: 8px 0;
+}
+.editorial-strategy p {
+  color: #655630;
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.6;
+}
+.editorial-strategy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #045c94;
+  font-weight: 700;
+  font-size: 12px;
+  min-height: 40px;
+}
+@media (max-width: 760px) {
+  .editorial-library-feature {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+  .editorial-library-feature > img {
+    height: auto;
+    aspect-ratio: 1.9;
+    object-position: center 40%;
+  }
+  .editorial-library-feature > div {
+    padding: 23px;
+  }
+  .editorial-library-feature h2 {
+    font-size: 29px;
+    margin: 10px 0;
+  }
+  .editorial-library-feature h2 br {
+    display: none;
+  }
+  .editorial-library-feature .pn-eyebrow {
+    font-size: 9px;
+  }
+  .editorial-library-feature .featured-read {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+  .editorial-doc-grid {
+    gap: 20px;
+  }
+  .editorial-doc-card.document-card {
+    border-radius: 20px;
+  }
+  .editorial-doc-cover {
+    aspect-ratio: 2;
+  }
+  .editorial-doc-card .document-card-body {
+    padding: 19px 20px;
+  }
+  .editorial-doc-card .document-card-body h3 {
+    font-size: 19px;
+    line-height: 1.3;
+    margin: 12px 0 8px;
+  }
+  .editorial-doc-card .document-card-body .pn-eyebrow {
+    font-size: 9px;
+  }
+  .editorial-doc-card .document-card-body .pn-badge {
+    font-size: 10px;
+  }
+  .editorial-doc-card .document-card-body p {
+    font-size: 11px;
+  }
+  .editorial-doc-card .document-card-body > div:last-child {
+    font-size: 11px;
+  }
+  .editorial-strategy {
+    grid-template-columns: 100px 1fr;
+  }
+  .editorial-strategy > img {
+    object-position: 30% center;
+  }
+  .editorial-strategy > div {
+    padding: 17px;
+  }
+  .editorial-strategy .human-eyebrow {
+    font-size: 8px;
+    line-height: 1.6;
+    display: block;
+  }
+  .editorial-strategy h2 {
+    font-size: 19px;
+    line-height: 1.2;
+  }
+  .editorial-strategy p {
+    display: none;
+  }
+  .editorial-strategy-link {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editorial-doc-cover img {
+    transition: none;
+  }
+  .editorial-doc-card:hover .editorial-doc-cover img {
+    transform: none;
+  }
+}
+@media print {
+  .editorial-certificate-photo {
+    display: none;
+  }
+}
+.human-evaluation-card {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff;
+  border: 1px solid #e4eaf0;
+  box-shadow: 0 8px 28px #21305308;
+}
+.human-evaluation-cover {
+  position: relative;
+  height: 132px;
+  overflow: hidden;
+}
+.human-evaluation-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 37%;
+}
+.human-status {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 100px;
+  background: #fff9e8;
+  color: #574211;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 12px #21305310;
+}
+.human-evaluation-content {
+  padding: 20px;
+}
+.human-eyebrow {
+  color: #045c94;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+.human-evaluation-content h2 {
+  margin: 9px 0;
+  font-size: 23px;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+  color: #213053;
+}
+.human-evaluation-content p {
+  margin: 0;
+  color: #607086;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.human-evaluation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 15px 0;
+  color: #58677b;
+  font-size: 10px;
+}
+.human-evaluation-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.human-evaluation-content .pn-button {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 46px;
+  font-size: 12px;
+}
+.human-team-banner.vivid-team-banner {
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 48%;
+  gap: 0;
+  align-items: stretch;
+}
+.human-team-banner > div {
+  padding: 30px;
+  align-self: center;
+}
+.human-team-photo {
+  width: 100%;
+  height: 100%;
+  min-height: 230px;
+  object-fit: cover;
+}
+.human-evaluation-hero.pn-evaluation-hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.human-evaluation-hero > div {
+  padding: 36px;
+}
+.human-evaluation-hero h2 {
+  font-size: clamp(25px, 2.5vw, 36px);
+}
+.human-reflection-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 45% center;
+}
+.human-inline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffe2a2;
+  font-size: 12px;
+  font-weight: 600;
+}
+.human-wellbeing-banner {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff1ca;
+  margin-bottom: 26px;
+}
+.human-wellbeing-banner > img {
+  width: 100%;
+  height: 100%;
+  max-height: 250px;
+  object-fit: cover;
+  object-position: center 40%;
+}
+.human-wellbeing-banner > div {
+  padding: 28px 32px;
+  align-self: center;
+}
+.human-wellbeing-banner .human-eyebrow {
+  color: #725218;
+}
+.human-wellbeing-banner h3 {
+  font-size: 25px;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+  color: #213053;
+  margin: 10px 0;
+}
+.human-wellbeing-banner p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #655630;
+}
+.human-rest-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 12px;
+  color: #045c94;
+  font-weight: 800;
+}
+@media (min-width: 761px) {
+  .pn-home-top {
+    grid-template-columns: minmax(0, 1.8fr) minmax(290px, 1fr);
+  }
+  .human-evaluation-card:hover img {
+    transform: scale(1.035);
+  }
+  .human-evaluation-cover img {
+    transition: transform 0.5s ease;
+  }
+}
+@media (max-width: 760px) {
+  .human-evaluation-card {
+    border-radius: 22px;
+  }
+  .human-evaluation-cover {
+    height: 140px;
+  }
+  .human-evaluation-content {
+    padding: 20px;
+  }
+  .human-evaluation-content h2 {
+    font-size: 24px;
+  }
+  .human-evaluation-content p {
+    font-size: 13px;
+  }
+  .human-evaluation-meta {
+    font-size: 11px;
+  }
+  .human-evaluation-content .pn-button {
+    min-height: 48px;
+    font-size: 13px;
+  }
+  .human-team-banner.vivid-team-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .human-team-banner > div {
+    padding: 24px;
+    align-self: stretch;
+  }
+  .human-team-photo {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1.9;
+    object-position: center 35%;
+  }
+  .human-team-banner .vivid-avatar-stack {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  .human-evaluation-hero.pn-evaluation-hero {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+  .human-evaluation-hero > div {
+    padding: 25px 23px;
+  }
+  .human-evaluation-hero .human-reflection-photo {
+    order: -1;
+    height: 165px;
+    object-position: center 38%;
+  }
+  .human-evaluation-hero h2 {
+    margin: 14px 0;
+  }
+  .human-evaluation-hero p {
+    max-width: none;
+    margin: 15px 0 20px;
+  }
+  .human-evaluation-hero .evaluation-duration {
+    font-size: 10px;
+    gap: 6px;
+  }
+  .human-wellbeing-banner {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+  .human-wellbeing-banner > img {
+    height: 150px;
+    object-position: center 35%;
+  }
+  .human-wellbeing-banner > div {
+    padding: 22px 24px 18px;
+  }
+  .human-wellbeing-banner h3 {
+    font-size: 25px;
+  }
+  .human-wellbeing-banner p {
+    margin: 10px 0 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .human-evaluation-cover img {
+    transition: none;
+  }
+  .human-evaluation-card:hover img {
+    transform: none;
+  }
+}

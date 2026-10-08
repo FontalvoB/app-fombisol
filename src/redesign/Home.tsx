@@ -288,29 +288,42 @@ export function Home() {
             </Button>
           </section>
         ) : activePeriod ? (
-          <Link className="pn-focus" to="/dashboard/evaluations">
-            <div className="focus-top">
-              <span>
-                <i /> EN TU RADAR
+          <section
+            className="human-evaluation-card"
+            aria-labelledby="evaluation-title"
+          >
+            <div className="human-evaluation-cover">
+              <img
+                src="/images/people/reflection.jpg"
+                alt=""
+                width="1536"
+                height="1024"
+              />
+              <span className="human-status">
+                <Icon name="assignment" size={16} />
+                Período activo
               </span>
-              <Icon name="arrow_outward" />
             </div>
-            <span className="focus-icon">
-              <Icon name="target" size={27} />
-            </span>
-            <h3>
-              Tu crecimiento <br />
-              merece un momento.
-            </h3>
-            <p>
-              Ya puedes completar tu evaluación
-              <br />
-              de desempeño del período {activePeriod.name ?? "sin dato"}.
-            </p>
-            <span className="focus-bottom">
-              Comenzar evaluación <Icon name="arrow_forward" size={18} />
-            </span>
-          </Link>
+            <div className="human-evaluation-content">
+              <span className="human-eyebrow">
+                TU DESARROLLO · {activePeriod.name ?? "SIN DATO"}
+              </span>
+              <h2 id="evaluation-title">Evaluación de desempeño</h2>
+              <p>
+                Ya puedes completar tu evaluación del período{" "}
+                {activePeriod.name ?? "sin dato"}.
+              </p>
+              <div className="human-evaluation-meta">
+                <span>
+                  <Icon name="schedule" size={16} /> Aproximadamente 5 minutos
+                </span>
+              </div>
+              <Link className="pn-button" to="/dashboard/evaluations">
+                Comenzar evaluación
+                <Icon name="arrow_forward" size={18} />
+              </Link>
+            </div>
+          </section>
         ) : (
           <div
             className="pn-focus"

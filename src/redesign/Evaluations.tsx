@@ -81,7 +81,7 @@ export function Evaluations() {
         title="Tu desarrollo, en primer plano."
         description="Haz una pausa, reconoce tus logros y descubre nuevas oportunidades."
       />
-      <section className="pn-evaluation-hero">
+      <section className="pn-evaluation-hero human-evaluation-hero">
         <div>
           <span className="pn-eyebrow">
             {activePeriod ? `CICLO ${activePeriod.name}` : "SIN CICLO ACTIVO"}
@@ -91,6 +91,17 @@ export function Evaluations() {
             <br />
             Un paso hacia tu mejor versión.
           </h2>
+          {employeeId != null && list.state.status !== "loading" && (
+            <span className="human-inline-status">
+              <Icon
+                name={autoCompleted ? "check_circle" : "assignment"}
+                size={17}
+              />
+              {autoCompleted
+                ? "Autoevaluación completada"
+                : "Autoevaluación pendiente"}
+            </span>
+          )}
           <p>
             Eva te acompaña en una autoevaluación sencilla.
             <br />
@@ -124,14 +135,13 @@ export function Evaluations() {
             <Icon name="schedule" size={16} /> Aproximadamente 5 minutos
           </span>
         </div>
-        <div className="evaluation-art">
-          <Icon name="target" size={120} />
-          <span>
-            Tu próximo nivel
-            <br />
-            empieza aquí.
-          </span>
-        </div>
+        <img
+          className="human-reflection-photo"
+          src="/images/people/reflection.jpg"
+          alt="Una profesional dedicando un momento a reflexionar y escribir"
+          width="1536"
+          height="1024"
+        />
       </section>
 
       {list.state.status === "error" ? (
