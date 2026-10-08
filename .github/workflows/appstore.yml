@@ -23,7 +23,7 @@ on:
 
 concurrency:
   group: appstore-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true # último disparo gana: sin builds duplicados
 
 jobs:
   deploy:

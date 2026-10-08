@@ -17,7 +17,7 @@ on:
 
 concurrency:
   group: testflight-${{ github.ref }}
-  cancel-in-progress: false # no cancelar: cada build es un build number nuevo
+  cancel-in-progress: true # último disparo gana: sin builds duplicados por push+dispatch
 
 jobs:
   deploy:
