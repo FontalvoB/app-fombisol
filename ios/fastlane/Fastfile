@@ -157,20 +157,35 @@ platform :ios do
     apply_compat_patches
     api_key = asc_api_key
     submit = options[:submit_for_review] == true
+    UI.message("cwd=#{Dir.pwd}")
 
     # Age rating (idempotente): sin esto la versión queda 'not in valid state'
+    rating_path = "./metadata/age_rating.json"
+    rating_path = "../fastlane/metadata/age_rating.json" unless File.exist?(rating_path)
+    rating_path = "fastlane/metadata/age_rating.json" unless File.exist?(rating_path)
+    UI.user_error!("age_rating.json no encontrado en ninguna ruta conocida") unless File.exist?(rating_path)
+    UI.message("Age rating config: #{rating_path}")
     update_app_age_rating(
       api_key: api_key,
       app_identifier: "com.peoplenet.app",
-      age_rating_config_path: "./metadata/age_rating.json"
+      age_rating_config_path: rating_path
     )
+    # Paths deterministas: cwd puede ser ios/fastlane o raíz del repo según quien
+    # invoque; entregamos ABSOLUTOS calculados por sondeo.
+    root = File.expand_path(Dir.pwd.end_with?("/ios/fastlane") ? "../.." : ".")
+    meta = File.join(root, "fastlane/metadata")
+    shots = File.join(root, "fastlane/screenshots")
+    UI.user_error!("No existe #{meta}") unless File.directory?(meta)
+    UI.user_error!("No existe #{shots}") unless File.directory?(shots)
+    UI.message("metadata_path=#{meta}")
+
     deliver(
       api_key: api_key,
       app_identifier: "com.peoplenet.app",
       app_version: "1.0",
       build_number: options[:build_number] ? options[:build_number].to_s : nil,
-      metadata_path: "./metadata",
-      screenshots_path: "./screenshots",
+      metadata_path: meta,
+      screenshots_path: shots,
       skip_metadata: false,
       skip_screenshots: false,
       submit_for_review: submit,
