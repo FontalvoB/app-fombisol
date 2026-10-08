@@ -140,11 +140,16 @@ def main():
     notes_dir = os.path.join(os.path.dirname(__file__), "..",
                              "android/app/src/main/play/release-notes")
     notes = []
+    # Notas por pista: internal.txt / closed.txt / production.txt (fallback: internal.txt)
+    notes_name = {"closed": "closed.txt", "production": "production.txt"}.get(
+        args.track, "internal.txt")
     if args.notes_file:
         notes = [("es-419", open(args.notes_file).read().strip())]
     else:
         for lang in ("es-419", "en-US"):
-            f = os.path.join(notes_dir, lang, "internal.txt")
+            f = os.path.join(notes_dir, lang, notes_name)
+            if not os.path.exists(f):
+                f = os.path.join(notes_dir, lang, "internal.txt")
             if os.path.exists(f) and open(f).read().strip():
                 notes.append((lang, open(f).read().strip()))
     if args.notes_file and not notes:

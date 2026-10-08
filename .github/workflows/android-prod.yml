@@ -1,0 +1,37 @@
+# Producción Google Play — MANUAL (workflow_dispatch).
+#
+# Requisito previo: "App content" 100% completo en Play Console
+# (política de privacidad REAL en URL activa, Data safety aprobado,
+# content rating, público objetivo, declaraciones de anuncios).
+# Si falta algo, la subida a producción fallará o quedará bloqueada en consola.
+#
+# Flujo recomendado (primera versión):
+#   1. dispatch con status=draft → AAB en producción como BORRADOR.
+#   2. En consola: revisar países, notas y "Enviar para revisión".
+#   3. Google revisa (1-7 días, primera vez suele ser más larga).
+#
+# Cuenta organización: sin gate de 12×14 (solo cuentas personales post-nov-2023).
+name: android-prod (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      status:
+        description: "Estado del release en la pista"
+        type: choice
+        options: [draft, completed, halted]
+        default: draft
+
+concurrency:
+  group: android-play # global: serializa builds, versionCode siempre creciente
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/android-release.yml
+    with:
+      mode: production
+      track: production
+      version_base: 3000000
+      release_status: ${{ inputs.status }}
+    secrets: inherit

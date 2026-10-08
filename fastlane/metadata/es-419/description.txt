@@ -1,0 +1,17 @@
+PeopleNet es la plataforma móvil de gestión de talento humano de tu empresa. Reúne en un solo lugar tus indicadores de desempeño, tus solicitudes de tiempo libre y toda tu información laboral, con una experiencia rápida, clara y segura.
+
+Con PeopleNet puedes:
+
+• KPIs en tiempo real — consulta tus indicadores de desempeño con gráficas claras y actualizadas.
+• Permisos y solicitudes — crea y da seguimiento a solicitudes de vacaciones, permisos y citas médicas; conoce su estado al instante.
+• Documentos — accede a tus documentos laborales desde cualquier lugar.
+• Evaluaciones — revisa tus evaluaciones de desempeño y tu histórico.
+• Certificados — descarga tus certificados laborales cuando los necesites.
+• Nuestro equipo — encuentra a tus colegas por área y rol.
+• Cuenta — administra tu perfil y tu información personal.
+
+Diseñada para equipos que quieren menos papeleo y más claridad: tus trámites, métricas y documentos al alcance de la mano.
+
+El acceso requiere una cuenta proporcionada por tu organización. Tus datos se transmiten siempre por conexión cifrada (HTTPS).
+
+Conectamos personas y posibilidades.
