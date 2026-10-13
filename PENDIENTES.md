@@ -34,6 +34,7 @@ _Fecha: 2026-10-08 · Actualizar casillas al completar ✅ / ⛔_
 - [ ] **Workflows iOS rotos** (commits "firma determinística P12" de la otra sesión fallan con YAML inválido 0s) — arreglar en esa sesión.
 - [ ] **Cert TLS prod vence 2027-03-18** — renovar ANTES de esa fecha (app nativa exige TLS válido).
 - [ ] **CORS del backend**: mantener `https://localhost` (Android) y `capacitor://localhost` (iOS) en el allowlist en cualquier cambio del server.
+- [ ] **WAF prod bloquea OPTIONS en /api** (Barracuda, "Web Page Blocked" 500, Attack ID 20000001, verificado 2026-10-13): el preflight CORS muere en el firewall. Mitigado en app con `CapacitorHttp` (capacitor.config.ts); **fix de raíz = pedir a infra/IT que permita método OPTIONS para `peoplenet.info/api/*` en el firewall**.
 - [ ] Unificar nombre en tiendas: "PeopleNet" (Capacitor/iOS) vs "People Net" (listing Play).
 - [ ] Si algún día se agrega SDK de analítica/ads/crashlytics → actualizar Data safety (Play) y App Privacy (Apple).
 - [ ] Si se agrega registro self-service de cuentas → obrigatoria URL de eliminación de cuenta (Play) y botón de borrado in-app.

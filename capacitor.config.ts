@@ -11,6 +11,12 @@ const config: CapacitorConfig = {
   appId: "com.peoplenet.app",
   appName: "PeopleNet",
   webDir: "dist",
+  // CapacitorHttp: en nativo, fetch/XHR se enrutan por el cliente HTTP nativo
+  // (GET vía interceptor del scheme handler con binario intacto; POST/PUT vía
+  // URLSession nativo). Elimina el preflight CORS, que el WAF de peoplenet.info
+  // bloquea con 500 (Attack ID 20000001) y rompía el login de TestFlight.
+  // Solo afecta a plataformas nativas; web dev/prod siguen con fetch normal.
+  CapacitorHttp: { enabled: true },
   server: {
     // Esquema seguro en Android nativo: evita mixed-content al consumir
     // APIs https y habilita contextos seguros (fetch, storage).
