@@ -119,25 +119,17 @@ v = versions["data"][0]
 vid = v["id"]
 ver_str = v["attributes"].get("versionString")
 print(f"• versión descartable {ver_str}: {vid} estado={v['attributes'].get('appStoreState')}")
+# 4. copyright → appStoreVersions / contentRightsDeclaration → apps (attrs reales)
 st, pv = call(f"{BASE}/appStoreVersions/{vid}", "PATCH", {
     "data": {"type": "appStoreVersions", "id": vid,
-             "attributes": {}}})
-print(f"• version PATCH (vacía, sanity) HTTP {st}")
+             "attributes": {"copyright": "2026 Fombisol"}}})
+print(("✓ copyright (version) →PATCH" if st == 200 else f"✗ version PATCH {st}: {json.dumps(pv)[:350]}"))
 
-# 4. Probing: attrs reales de cada recurso candidatario de copyright
-st, appdata = call(f"{BASE}/apps/{app_id}")
-if st == 200:
-    attrs = appdata.get("data", {}).get("attributes", {})
-    print(f"• attrs apps: {sorted(attrs.keys())}")
-st, ai = call(f"{BASE}/appInfos/{info_id}")
-if st == 200:
-    print(f"• attrs appInfos: {sorted(ai.get('data', {}).get('attributes', {}).keys())}")
-st, vi = call(f"{BASE}/appStoreVersions/{vid}")
-if st == 200:
-    print(f"• attrs appStoreVersions: {sorted(vi.get('data', {}).get('attributes', {}).keys())}")
-st, li = call(f"{BASE}/appInfoLocalizations/{loc_id}")
-if st == 200:
-    print(f"• attrs appInfoLocalizations: {sorted(li.get('data', {}).get('attributes', {}).keys())}")
+st, pa = call(f"{BASE}/apps/{app_id}", "PATCH", {
+    "data": {"type": "apps", "id": app_id,
+             "attributes": {"contentRightsDeclaration":
+                                "DOES_NOT_USE_THIRD_PARTY_CONTENT"}}})
+print(("✓ contentRightsDeclaration (app) →PATCH" if st == 200 else f"✗ app PATCH {st}: {json.dumps(pa)[:350]}"))
 
 
 
