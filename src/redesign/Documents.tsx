@@ -1,3 +1,4 @@
+import { DetailSheet, DetailMeta } from "./DetailSheet";
 /**
  * M5 — Documentos conectados al backend real (kpis-ms).
  *
@@ -28,10 +29,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useHistory } from "react-router-dom";
 import {
   Icon,
-  Brand,
   Button,
   Badge,
   PageHero,
@@ -477,13 +477,13 @@ export function Reader(_props: {
   reads?: string[];
   onRead?: (id: string) => void;
 }) {
+  const history = useHistory();
   const { id } = useParams<{ id: string }>();
   // Los ids reales son numéricos; enlaces antiguos no numéricos → no existe.
   const documentId = id != null && /^\d+$/.test(id) ? Number(id) : null;
   const userId = sessionUserId();
 
   const detail = useCorporateDocumentDetail(documentId);
-  const categories = useDocumentCategories();
   const confirmed = useConfirmedDocumentIds(userId);
   const confirmedIds = confirmed.state.data?.documentIds;
   const idsKnown = Array.isArray(confirmedIds);
@@ -667,17 +667,10 @@ export function Reader(_props: {
   const versions = doc.versionHistory ?? [];
 
   return (
-    <>
-      <Link className="pn-back" to="/dashboard/documents">
-        <Icon name="arrow_back" size={17} /> Volver a la biblioteca
-      </Link>
-      <PageHero
-        eyebrow={categoryLabel(doc.category, categories.state.data)}
-        title={doc.title ?? "Sin título"}
-        description={`Versión ${doc.version ?? "Sin dato"} · ${wireDate(
-          doc.uploadedAt,
-        )}${doc.uploadedBy ? ` · Subido por ${doc.uploadedBy}` : ""}`}
-        action={
+    <DetailSheet title={doc.title ?? "Documento"}
+      status={<Badge>{alreadyConfirmed ? "Leído" : "Por leer"}</Badge>}
+      close={() => history.push("/dashboard/documents")}
+      footer={<>
           <Button
             secondary
             disabled={downloadStatus === "loading" || doc.id == null}
@@ -686,8 +679,26 @@ export function Reader(_props: {
             <Icon name="download" />{" "}
             {downloadStatus === "loading" ? "Descargando…" : "Descargar"}
           </Button>
-        }
-      />
+            <Button
+              disabled={
+                alreadyConfirmed ||
+                confirmState.status === "loading" ||
+                doc.id == null ||
+                userId == null
+              }
+              onClick={() => void handleConfirm()}
+            >
+              {alreadyConfirmed
+                ? "Lectura confirmada"
+                : confirmState.status === "loading"
+                  ? "Confirmando…"
+                  : "Confirmar lectura"}
+            </Button>      </>}>
+      <dl>
+        <DetailMeta icon="description" label="Archivo">{doc.fileName ?? "Sin archivo"}</DetailMeta>
+        <DetailMeta icon="history" label="Versión">{doc.version ?? "Sin dato"}</DetailMeta>
+        <DetailMeta icon="calendar_month" label="Publicado">{wireDate(doc.uploadedAt)}</DetailMeta>
+      </dl>
       {downloadStatus === "error" && (
         <div
           className="pn-info"
@@ -722,18 +733,6 @@ export function Reader(_props: {
           ))}
         </aside>
         <article className="pn-panel pn-paper">
-          <div className="paper-brand">
-            <Brand />
-            <span>DOCUMENTO INTERNO</span>
-          </div>
-          <h1>{doc.title ?? "Sin título"}</h1>
-          <img
-            className="editorial-reader-photo"
-            src={`/images/people/${categoryCover(doc.category)}.jpg`}
-            alt=""
-            width="1536"
-            height="1024"
-          />
           <p className="paper-intro">
             {doc.description ?? "Sin descripción del servidor."}
           </p>
@@ -812,21 +811,7 @@ export function Reader(_props: {
                   : "La confirmación se registra con tu usuario real; no se hace automáticamente al abrir."}
               </p>
             </div>
-            <Button
-              disabled={
-                alreadyConfirmed ||
-                confirmState.status === "loading" ||
-                doc.id == null ||
-                userId == null
-              }
-              onClick={() => void handleConfirm()}
-            >
-              {alreadyConfirmed
-                ? "Lectura confirmada"
-                : confirmState.status === "loading"
-                  ? "Confirmando…"
-                  : "Confirmar lectura"}
-            </Button>
+
           </div>
           {userId == null && !alreadyConfirmed && (
             <p className="pn-info" role="note">
@@ -845,6 +830,6 @@ export function Reader(_props: {
           )}
         </article>
       </div>
-    </>
+    </DetailSheet>
   );
 }

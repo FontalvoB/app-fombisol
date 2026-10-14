@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import peopleNetMark from "./assets/peoplenet-mark.png";
 
@@ -260,42 +260,4 @@ export function download(name: string, content: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function Modal({
-  title,
-  children,
-  close,
-}: {
-  title: string;
-  children: ReactNode;
-  close: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current;
-    d?.showModal();
-    return () => d?.close();
-  }, []);
-  return (
-    <dialog
-      ref={ref}
-      className="pn-modal"
-      aria-labelledby="pn-modal-title"
-      onCancel={close}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
-      <div className="panel-heading">
-        <h2 id="pn-modal-title">{title}</h2>
-        <button
-          aria-label="Cerrar ventana"
-          className="pn-icon-button"
-          onClick={close}
-        >
-          <Icon name="close" />
-        </button>
-      </div>
-      {children}
-    </dialog>
-  );
-}
+export { DetailSheet as Modal } from "./DetailSheet";

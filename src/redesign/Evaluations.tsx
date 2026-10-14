@@ -1,3 +1,4 @@
+import { useChatViewport } from "./DetailSheet";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -367,6 +368,7 @@ export function Chat({ evaluation = false }: { evaluation?: boolean }) {
 
 /** Eva de autoevaluación: flujo determinista → POST /api/evaluations. */
 function EvaChat() {
+  const chatRef = useChatViewport();
   const employeeId = sessionEmployeeId();
   const { periods, activePeriod } = useActivePeriod();
 
@@ -386,11 +388,11 @@ function EvaChat() {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({
+    endRef.current?.parentElement?.scrollTo({
+      top: endRef.current.offsetTop,
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
         : "smooth",
-      block: "nearest",
     });
   }, [messages, stepIndex]);
 
@@ -599,10 +601,10 @@ function EvaChat() {
       <PageHero
         eyebrow="UN MOMENTO PARA REFLEXIONAR"
         title="Tu autoevaluación con Eva"
-        description="Criterios reales del ciclo de desempeño; tus respuestas se guardan en el servidor."
+        description="Reflexiona a tu ritmo. Solo guardaremos tus respuestas cuando confirmes al final."
       />
       <div className="pn-chat-layout">
-        <section className="pn-panel pn-chat">
+        <section ref={chatRef} className="pn-panel pn-chat">
           <header>
             <span className="spark">
               <Icon name="auto_awesome" />
@@ -613,7 +615,7 @@ function EvaChat() {
                 <i /> {activePeriod.name}
               </small>
             </div>
-            <span>{saved ? "GUARDADA" : "EN CURSO"}</span>
+            <Badge>{saved ? "Guardada" : "En curso"}</Badge>
           </header>
           <div className="chat-messages" aria-live="polite">
             {messages.map((m, i) => (
@@ -627,6 +629,28 @@ function EvaChat() {
               </div>
             ))}
             <div ref={endRef} />
+            <section className="eva-question" aria-label="Pregunta actual">
+              <span className="pn-badge blue">Paso {stepIndex + 1} de {totalSteps}</span>
+          {currentCriterio ? (
+            <div className="pn-info">
+              <strong>
+                {
+                  M7_BLOQUES[step.kind === "criterio" ? step.bloqueIdx : 0]
+                    .nombre
+                }
+              </strong>
+              <p>{currentCriterio.texto}</p>
+              {[1, 2, 3, 4].map((n) => (
+                <p key={n}>
+                  <strong>{n}:</strong> {currentCriterio.ejemplos[n]}
+                </p>
+              ))}
+            </div>
+          ) : null}
+              {step.kind === "comentario" && <h3>¿Quieres añadir un comentario sobre {currentBloque?.nombre}?</h3>}
+              {step.kind === "narrativa" && <h3>{NARRATIVE_FIELDS[step.nIdx].label}</h3>}
+              {step.kind === "resumen" && <h3>Tu reflexión está lista. Revisa tus respuestas antes de guardar.</h3>}
+            </section>
           </div>
           {saved ? (
             <Link className="pn-button" to="/dashboard/evaluations">
@@ -635,8 +659,8 @@ function EvaChat() {
           ) : step.kind === "criterio" ? (
             <div className="chat-ratings">
               {M7_ESCALA.map((e) => (
-                <button key={e.value} onClick={() => rate(e.value)}>
-                  {e.value}
+                <button key={e.value} aria-label={`${e.value} · ${e.label}`} title={currentCriterio?.ejemplos[e.value]} onClick={() => rate(e.value)}>
+                  <strong>{e.value}</strong><span>{e.label}</span>
                 </button>
               ))}
               <span>
@@ -676,8 +700,7 @@ function EvaChat() {
             </p>
           )}
           <p className="chat-disclaimer">
-            Flujo determinista · El cuestionario es la configuración real del
-            ciclo de desempeño y se guarda vía POST /api/evaluations.
+            Tus respuestas permanecen en esta sesión hasta que elijas guardar.
           </p>
         </section>
         <aside className="pn-chat-aside">
@@ -686,22 +709,6 @@ function EvaChat() {
           <p>
             No hay respuestas perfectas. Piensa en ejemplos de tu día a día.
           </p>
-          {currentCriterio ? (
-            <div className="pn-info">
-              <strong>
-                {
-                  M7_BLOQUES[step.kind === "criterio" ? step.bloqueIdx : 0]
-                    .nombre
-                }
-              </strong>
-              <p>{currentCriterio.texto}</p>
-              {[1, 2, 3, 4].map((n) => (
-                <p key={n}>
-                  <strong>{n}:</strong> {currentCriterio.ejemplos[n]}
-                </p>
-              ))}
-            </div>
-          ) : null}
           <div className="pn-progress">
             <i
               style={{
@@ -742,6 +749,7 @@ function BlockedEva({ title, message }: { title: string; message: string }) {
 
 /** Nanabot: asistente de consulta; SOLO ADMIN/SUPER_ADMIN (backend 403). */
 function NanabotChat() {
+  const chatRef = useChatViewport();
   const canUse = sessionCanUseNanabot();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -842,7 +850,7 @@ function NanabotChat() {
         description="Asistente de consulta con las herramientas de la plataforma."
       />
       <div className="pn-chat-layout">
-        <section className="pn-panel pn-chat">
+        <section ref={chatRef} className="pn-panel pn-chat">
           <header>
             <span className="spark">
               <Icon name="auto_awesome" />

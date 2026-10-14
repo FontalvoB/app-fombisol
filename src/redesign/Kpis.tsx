@@ -1,3 +1,4 @@
+import { DetailMeta } from "./DetailSheet";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -392,12 +393,13 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
             selected.objective ??
             "Detalle del indicador"
           }
+          status={<Badge>{selected.finalResultValue != null ? "Evaluado" : "Pendiente"}</Badge>}
           close={() => setDetailId(null)}
         >
           <div className="metric-detail">
-            <Badge>
-              {selected.finalResultValue != null ? "Evaluado" : "Pendiente"}
-            </Badge>
+            <h3>Resultado y meta</h3>
+            <dl><DetailMeta icon="calendar_month" label="Período">{period ? periodLabel(period) : "Sin dato"}</DetailMeta>
+            <DetailMeta icon="account_tree" label="Área">{selected.areaName ?? selected.dependencyName ?? "Sin dato"}</DetailMeta></dl>
             {selected.finalResultValue != null &&
             (selected.measurementDirection ?? "").toLowerCase() ===
               "ascendente" &&

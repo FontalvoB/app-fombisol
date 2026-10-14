@@ -592,17 +592,16 @@ export function Team() {
         </>
       )}
       {selectedPerson && (
-        <Modal title="Perfil del equipo" close={() => setSelectedPerson(null)}>
+        <Modal title="Perfil del equipo" status={<Badge>{selectedPersonContext || "Ubicación sin dato"}</Badge>} close={() => setSelectedPerson(null)}>
           <div className="person-detail">
             <Avatarish initials={initials(selectedPerson.fullName)} tone={1} />
             <h2>{selectedPerson.fullName ?? "Sin nombre"}</h2>
             <p>{selectedPerson.position ?? "Sin cargo"}</p>
-            <Badge>{selectedPersonContext || "Ubicación sin dato"}</Badge>
           </div>
           <dl className="pn-details">
-            <dt>Correo</dt>
+            <dt><Icon name="mail" size={18} /> Correo</dt>
             <dd>{selectedPerson.email ?? "Sin dato"}</dd>
-            <dt>Nivel</dt>
+            <dt><Icon name="account_tree" size={18} /> Nivel</dt>
             <dd>{selectedPerson.levelName ?? "Sin dato"}</dd>
           </dl>
         </Modal>

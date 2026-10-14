@@ -148,8 +148,8 @@ export function PerformanceChart({
       >
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#0476bb" stopOpacity=".24" />
-            <stop offset="1" stopColor="#0476bb" stopOpacity="0" />
+            <stop stopColor="var(--pn-blue)" stopOpacity=".24" />
+            <stop offset="1" stopColor="var(--pn-blue)" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[40, 60, 80, 100].map((v) => (
@@ -159,13 +159,13 @@ export function PerformanceChart({
               x2="348"
               y1={180 - ((v - 40) / 60) * 152}
               y2={180 - ((v - 40) / 60) * 152}
-              stroke="#e5edf5"
+              stroke="var(--pn-surface)"
               strokeDasharray="3 5"
             />
             <text
               x="0"
               y={184 - ((v - 40) / 60) * 152}
-              fill="#8193aa"
+              fill="var(--pn-navy)"
               fontSize="9"
             >
               {v}%
@@ -178,7 +178,7 @@ export function PerformanceChart({
           d={path}
           pathLength="1"
           fill="none"
-          stroke="#045c94"
+          stroke="var(--pn-navy)"
           strokeWidth="3.5"
           strokeLinecap="round"
         />
@@ -187,7 +187,7 @@ export function PerformanceChart({
           x2={pts[focus].x}
           y1={pts[focus].y}
           y2="195"
-          stroke="#045c94"
+          stroke="var(--pn-navy)"
           strokeDasharray="3 4"
           opacity=".35"
         />
@@ -197,11 +197,11 @@ export function PerformanceChart({
               cx={p.x}
               cy={p.y}
               r={i === focus ? 10 : 4}
-              fill={i === focus ? "#ffb71b" : "white"}
-              stroke={i === focus ? "white" : "#045c94"}
+              fill={i === focus ? "var(--pn-yellow)" : "var(--pn-surface)"}
+              stroke={i === focus ? "var(--pn-surface)" : "var(--pn-navy)"}
               strokeWidth="3"
             />
-            {i === focus && <circle cx={p.x} cy={p.y} r="3" fill="#213053" />}
+            {i === focus && <circle cx={p.x} cy={p.y} r="3" fill="var(--pn-navy)" />}
           </g>
         ))}
       </svg>
