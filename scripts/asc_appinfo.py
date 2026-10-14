@@ -131,6 +131,25 @@ st, pa = call(f"{BASE}/apps/{app_id}", "PATCH", {
                                 "DOES_NOT_USE_THIRD_PARTY_CONTENT"}}})
 print(("✓ contentRightsDeclaration (app) →PATCH" if st == 200 else f"✗ app PATCH {st}: {json.dumps(pa)[:350]}"))
 
+# 5. Pricing: schedule base (territorio base) — intentar como FREE sin price points
+st, sched = call(f"{BASE}/appPriceSchedules", "POST", {
+    "data": {"type": "appPriceSchedules",
+             "attributes": {"baseTerritory": "USA"},
+             "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}})
+if st in (200, 201):
+    sched_id = sched["data"]["id"]
+    print(f"✓ appPriceSchedule creado: {sched_id}")
+else:
+    print(f"• appPriceSchedules POST → {st}: {json.dumps(sched)[:400]}")
+    sched_id = None
+
+# availability (territorios) si el schedule GL ignora la availability creada por defecto
+if sched_id:
+    st2, avail = call(f"{BASE}/apps/{app_id}/appAvailabilities")
+    if st2 == 200 and avail.get("data"):
+        av_id = avail["data"][0]["id"]
+        print(f"• appAvailability existente: {av_id} (territorios default=Apple)")
+
 
 
 # 4. Diagnóstico de errores pendientes de la versión (por estado y relacións)
