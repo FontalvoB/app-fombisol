@@ -99,16 +99,27 @@ st, patched = call(f"{BASE}/appInfoLocalizations/{loc_id}", "PATCH",
                              "attributes": {"name": "PeopleNet"}}})
 print(("✓ localize es-MX nombre confirmado" if st == 200 else f"• localize PATCH {st}: {json.dumps(patched)[:200]}"))
 
-# 2. Categoría Business (iOS) — sin filtro de plataforma, paginando hasta hallarla
+# 2. Categoría Business (iOS) — paginando sin filtro, debug de nombres
 bcat = None
+nombres = []
+total = 0
+primer_raw = None
 url_next = f"{BASE}/appCategories?limit=200"
-while url_next and not bcat:
+while url_next:
     st, cats = call(url_next)
-    if st != 200: die(f"appCategories: {st} {json.dumps(cats)[:200]}")
-    for c in cats.get("data", []):
-        if c["attributes"].get("name") == "Business":
-            bcat = c; break
+    if st != 200: die(f"appCategories: {st} {json.dumps(cats)[:250]}")
+    data = cats.get("data", [])
+    if primer_raw is None and data:
+        primer_raw = json.dumps(data[0])[:400]
+    total += len(data)
+    for c in data:
+        a = c.get("attributes", {})
+        nombres.append(a.get("name"))
+        if a.get("name") == "Business":
+            bcat = c
     url_next = cats.get("links", {}).get("next")
+print(f"• categorías: {total} | muestra: {sorted([n for n in nombres if n])[:25]}")
+if primer_raw: print(f"• raw[0]: {primer_raw}")
 if not bcat: die("Categoría Business no encontrada")
 print(f"✓ categoría Business: {bcat['id']}")
 
