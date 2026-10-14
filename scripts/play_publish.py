@@ -96,7 +96,7 @@ def main():
 
     if args.query_max:
         import play_auth
-        token = play_auth.get_play_token()
+        token = play_auth.get_play_token(quiet=True)
         api = PlayApi(token)
         edit = api.call("POST", "/edits")
         try:

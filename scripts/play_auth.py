@@ -140,12 +140,12 @@ def _impersonate(user_token):
 
 
 # ── Punto de entrada ──────────────────────────────────────────────────────────
-def get_play_token():
+def get_play_token(quiet=False):
     """Devuelve token de acceso con scope androidpublisher (SA key > ADC)."""
     import time
     sa = _sa_key_material()
     if sa:
-        print("✓ Autenticación: SA JSON key (RS256 — sin rapt)")
+        if not quiet: print("✓ Autenticación: SA JSON key (RS256 — sin rapt)")
         return _sa_token_from_key(sa, int(time.time()))
-    print("✓ Autenticación: ADC gcloud + impersonación (legacy)")
+    if not quiet: print("✓ Autenticación: ADC gcloud + impersonación (legacy)")
     return _impersonate(_adc_user_token())
