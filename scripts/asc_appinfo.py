@@ -124,14 +124,13 @@ st, pv = call(f"{BASE}/appStoreVersions/{vid}", "PATCH", {
              "attributes": {}}})
 print(f"• version PATCH (vacía, sanity) HTTP {st}")
 
-# 4. copyright + contentRightsDeclaration — NIVEL APP (apps/{id})
-st, pa = call(f"{BASE}/apps/{app_id}", "PATCH", {
-    "data": {"type": "apps", "id": app_id,
-             "attributes": {"copyright": "2026 Fombisol",
-                            "contentRightsDeclaration":
-                                "DOES_NOT_USE_THIRD_PARTY_CONTENT"}}})
-print(("✓ copyright + contentRightsDeclaration (app-level) →PATCH" if st == 200
-       else f"✗ app PATCH {st}: {json.dumps(pa)[:350]}"))
+# 4. copyright + contentRightsDeclaration — sonda: attrs reales de apps
+st, appdata = call(f"{BASE}/apps/{app_id}")
+if st == 200:
+    attrs = appdata.get("data", {}).get("attributes", {})
+    print(f"• attrs de apps/{app_id}: {sorted(attrs.keys())}")
+    print(f"• copyright actual: {attrs.get('copyright')!r} | rights: {attrs.get('contentRightsDeclaration')!r}")
+
 
 # 4. Diagnóstico de errores pendientes de la versión (por estado y relacións)
 st, vrel = call(f"{BASE}/appStoreVersions/{vid}?include=build,appStoreVersionLocalizations&fields[builds]=version,processingState")
