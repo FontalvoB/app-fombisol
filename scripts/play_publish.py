@@ -38,47 +38,6 @@ def die(msg, hint=None):
     sys.exit(1)
 
 
-# ── Autenticación ─────────────────────────────────────────────────────────────
-def adc_user_token():
-    """Token de usuario desde el ADC plano (authorized_user) de gcloud."""
-    if not os.path.exists(ADC_PATH):
-        die("No existe ADC de gcloud.", f"Ejecuta:\n  gcloud auth application-default login")
-    d = json.load(open(ADC_PATH))
-    if d.get("type") != "authorized_user":
-        die(f"ADC es '{d.get('type')}' y debe ser 'authorized_user'.",
-            "Regenera con:  gcloud auth application-default login  (SIN --impersonate-service-account)")
-    body = urllib.parse.urlencode({
-        "client_id": d["client_id"], "client_secret": d["client_secret"],
-        "refresh_token": d["refresh_token"], "grant_type": "refresh_token",
-    }).encode()
-    try:
-        r = json.load(urllib.request.urlopen(
-            urllib.request.Request("https://oauth2.googleapis.com/token", data=body)))
-        return r["access_token"]
-    except urllib.error.HTTPError as e:
-        die(f"Refresh del token de usuario falló ({e.code})", e.read().decode()[:300])
-
-
-def sa_token(user_token):
-    """Token de la SA de Play impersonada con el usuario."""
-    body = json.dumps({"delegates": [], "scope": [ANDROIDPUBLISHER], "lifetime": "3600s"}).encode()
-    req = urllib.request.Request(
-        "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
-        f"{IMPERSONATE_SA}:generateAccessToken",
-        data=body, method="POST",
-        headers={"Authorization": f"Bearer {user_token}", "Content-Type": "application/json"})
-    try:
-        r = json.load(urllib.request.urlopen(req))
-        return r["accessToken"]
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode()[:300]
-        if "getAccessToken" in detail:
-            die("Impersonación denegada (403 getAccessToken).",
-                "Falta rol 'Creador de tokens de cuenta de servicio' para TU usuario sobre "
-                f"la SA en Google Cloud → IAM (recurso: {IMPERSONATE_SA}).")
-        die("Impersonación falló", detail)
-
-
 # ── API Play ──────────────────────────────────────────────────────────────────
 class PlayApi:
     def __init__(self, token):
@@ -121,7 +80,7 @@ class PlayApi:
                 raise RuntimeError(f"Upload AAB → {e.code}: {raw[:300]}")
 
 
-# ── Flujo principal ───────────────────────────────────────────────────────────
+# ── Autenticación (play_auth: SA key preferida → ADC impersonación) ─────────
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--aab", required=True)
@@ -159,9 +118,9 @@ def main():
     for lang, txt in notes:
         print(f"• notas [{lang}]: {txt[:60]}{'…' if len(txt) > 60 else ''}")
 
-    user_tok = adc_user_token()
-    token = sa_token(user_tok)
-    print("✓ Autenticación OK (SA impersonada)")
+    import play_auth
+    token = play_auth.get_play_token()
+    print("✓ Autenticación OK")
 
     if args.dry_run:
         api = PlayApi(token)

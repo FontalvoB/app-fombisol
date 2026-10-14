@@ -45,39 +45,6 @@ def die(msg, hint=None):
     sys.exit(1)
 
 
-def adc_user_token():
-    if not os.path.exists(ADC_PATH):
-        die("No existe ADC de gcloud.", "Ejecuta:\n  gcloud auth application-default login")
-    d = json.load(open(ADC_PATH))
-    if d.get("type") != "authorized_user":
-        die(f"ADC es '{d.get('type')}' y debe ser 'authorized_user'.",
-            "Regenera con:  gcloud auth application-default login")
-    body = urllib.parse.urlencode({
-        "client_id": d["client_id"], "client_secret": d["client_secret"],
-        "refresh_token": d["refresh_token"], "grant_type": "refresh_token",
-    }).encode()
-    try:
-        r = json.load(urllib.request.urlopen(
-            urllib.request.Request("https://oauth2.googleapis.com/token", data=body)))
-        return r["access_token"]
-    except urllib.error.HTTPError as e:
-        die(f"Refresh del token de usuario falló ({e.code})", e.read().decode()[:300])
-
-
-def sa_token(user_token):
-    body = json.dumps({"delegates": [], "scope": [ANDROIDPUBLISHER], "lifetime": "3600s"}).encode()
-    req = urllib.request.Request(
-        "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
-        f"{IMPERSONATE_SA}:generateAccessToken",
-        data=body, method="POST",
-        headers={"Authorization": f"Bearer {user_token}", "Content-Type": "application/json"})
-    try:
-        r = json.load(urllib.request.urlopen(req))
-        return r["accessToken"]
-    except urllib.error.HTTPError as e:
-        die("Impersonación falló", e.read().decode()[:300])
-
-
 class PlayApi:
     def __init__(self, token):
         self.token = token
@@ -159,7 +126,8 @@ def main():
     if len(screens) < 2:
         die("Google Play exige mínimo 2 screenshots de teléfono")
 
-    token = sa_token(adc_user_token())
+    import play_auth
+    token = play_auth.get_play_token()
     print("✓ Autenticación OK (SA impersonada)")
 
     if args.dry_run:

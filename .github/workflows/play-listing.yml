@@ -37,9 +37,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Autenticación Play (ADC)
+      - name: Autenticación Play (SA key o ADC)
         env:
           GOOGLE_ADC_JSON: ${{ secrets.GOOGLE_ADC_JSON }}
+          GOOGLE_SA_KEY_JSON: ${{ secrets.GOOGLE_SA_KEY_JSON }}
         run: echo "$GOOGLE_ADC_JSON" | base64 --decode > /tmp/adc.json
 
       - name: Publicar listing (dry-run=${{ inputs.dry_run }})
