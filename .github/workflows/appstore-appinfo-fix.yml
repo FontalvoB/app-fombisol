@@ -1,0 +1,24 @@
+# Arregla campos requeridos de App Info (copyright, categoría, contentRights)
+# antes del submit — API ASC con la misma key del repo.
+name: appstore-appinfo-fix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: macos-26
+    timeout-minutes: 10
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Parchear App Info (copyright + categoría + contentRights)
+        run: |
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > /dev/null # validar b64
+          python3 -m pip install --quiet --break-system-packages cryptography
+          python3 scripts/asc_appinfo.py
