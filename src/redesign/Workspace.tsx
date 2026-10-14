@@ -34,6 +34,8 @@ export default function Workspace() {
   const menuRef = useRef<HTMLElement>(null);
   const previousRoute = useRef(location.pathname);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [starting, setStarting] = useState(true);
+  const startupValidation = useRef<Promise<unknown> | null>(null);
   const reduceMotion = useReducedMotion();
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
@@ -129,9 +131,45 @@ export default function Workspace() {
   // al montar. Un 401 limpia la sesión y redirige a /login desde el cliente
   // API; un fallo transitorio (5xx/red) no invalida la sesión local.
   useEffect(() => {
-    if (!isAuthenticated()) return;
-    void validateSession();
+    let mounted = true;
+    // Reuse the existing validation, including React StrictMode's effect replay.
+    startupValidation.current ??= isAuthenticated()
+      ? validateSession()
+      : Promise.resolve();
+    // A short first paint avoids blinking; slow validation stays covered.
+    let timer: ReturnType<typeof setTimeout>;
+    const firstPaint = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, 350);
+    });
+    void Promise.all([startupValidation.current, firstPaint]).then(() => {
+      if (mounted) setStarting(false);
+    });
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, []);
+  useEffect(() => {
+    if (starting) return;
+    const splash = document.getElementById("app-splash");
+    // Paint the resolved route beneath the splash before cross-fading it out.
+    let secondFrame = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const frame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        splash?.classList.add("is-leaving");
+        timer = setTimeout(() => {
+          splash?.remove();
+          document.documentElement.classList.remove("app-starting");
+        }, reduceMotion ? 0 : 250);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(secondFrame);
+      clearTimeout(timer);
+    };
+  }, [starting, reduceMotion]);
   // Logout: limpiar sesión y datos demo (pn-v2-*) y navegar con recarga
   // completa para remontar la app sin heredar estado del usuario anterior.
   const handleLogout = () => {
@@ -155,6 +193,7 @@ export default function Workspace() {
       "Resumen");
   const userName = displayName(readSession()?.user ?? null) || "Usuario";
   const userInitials = initialsOf(userName) || "PN";
+  if (starting) return null;
   if (location.pathname === "/") return <Redirect to="/login" />;
   if (location.pathname === "/login") return <Login />;
   // Guard de sesión (Ola 0): sin sesión autenticada no se pinta NADA privado;

@@ -48,8 +48,13 @@ function LoginBrand() {
 export function Login() {
   const history = useHistory();
   const reduceMotion = useReducedMotion();
+  // The startup overlay provides the entrance; do not reveal a delayed empty sheet.
+  const [coveredBySplash] = useState(() =>
+    Boolean(document.getElementById("app-splash")),
+  );
+  const staticEntrance = reduceMotion || coveredBySplash;
   const entrance = (delay: number, scale = 1) => ({
-    initial: reduceMotion ? (false as const) : { opacity: 0, y: 16, scale },
+    initial: staticEntrance ? (false as const) : { opacity: 0, y: 16, scale },
     animate: { opacity: 1, y: 0, scale: 1 },
     transition: {
       duration: reduceMotion ? 0 : 0.38,
@@ -165,7 +170,7 @@ export function Login() {
         <motion.section
           className="entry-card"
           aria-labelledby="entry-welcome"
-          initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
+          initial={staticEntrance ? false : { opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={
             reduceMotion

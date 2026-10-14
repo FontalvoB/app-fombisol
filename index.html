@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="app-starting">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>PeopleNet · Tu espacio para crecer</title>
+    <link rel="stylesheet" href="/src/redesign/startup.css" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,6 +24,11 @@
     />
   </head>
   <body>
+    <div id="app-splash" class="app-splash" role="status" aria-live="polite" aria-label="Cargando tu espacio…">
+      <img class="app-splash-logo" src="/src/redesign/assets/peoplenet-mark.svg" width="112" height="122" alt="PeopleNet" />
+      <div class="app-splash-progress" aria-hidden="true"></div>
+      <p aria-hidden="true">Cargando tu espacio…</p>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,0 +1,74 @@
+/* Loaded by index.html: the first WebView paint and React share this surface. */
+html.app-starting,
+html.app-starting body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
+  background: #0b3e8f;
+}
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  box-sizing: border-box;
+  padding: max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  color: #fff;
+  background:
+    linear-gradient(rgb(14 51 123 / 16%), transparent 75%),
+    radial-gradient(ellipse at 75% 0, rgb(145 237 255 / 12%), transparent 50%),
+    linear-gradient(170deg, #1668d8 62%, #0b3e8f);
+  opacity: 1;
+  transition: opacity 250ms ease;
+}
+.app-splash.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.app-splash-logo {
+  width: 112px;
+  height: 122px;
+  object-fit: contain;
+  animation: startup-pulse 1.8s ease-in-out infinite;
+}
+.app-splash-progress {
+  width: 144px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f7ce2e;
+}
+.app-splash-progress::after {
+  content: "";
+  display: block;
+  width: 60%;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff3a0;
+  animation: startup-progress 1.2s ease-in-out infinite;
+}
+.app-splash p {
+  margin: 0;
+  font: 400 14px/1.5 "DM Sans", system-ui, sans-serif;
+  color: rgb(255 255 255 / 85%);
+}
+@keyframes startup-pulse {
+  50% { transform: scale(1.045); opacity: 0.8; }
+}
+@keyframes startup-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(170%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-splash { transition: none; }
+  .app-splash-logo,
+  .app-splash-progress::after { animation: none; }
+}
