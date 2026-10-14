@@ -124,12 +124,21 @@ st, pv = call(f"{BASE}/appStoreVersions/{vid}", "PATCH", {
              "attributes": {}}})
 print(f"• version PATCH (vacía, sanity) HTTP {st}")
 
-# 4. copyright + contentRightsDeclaration — sonda: attrs reales de apps
+# 4. Probing: attrs reales de cada recurso candidatario de copyright
 st, appdata = call(f"{BASE}/apps/{app_id}")
 if st == 200:
     attrs = appdata.get("data", {}).get("attributes", {})
-    print(f"• attrs de apps/{app_id}: {sorted(attrs.keys())}")
-    print(f"• copyright actual: {attrs.get('copyright')!r} | rights: {attrs.get('contentRightsDeclaration')!r}")
+    print(f"• attrs apps: {sorted(attrs.keys())}")
+st, ai = call(f"{BASE}/appInfos/{info_id}")
+if st == 200:
+    print(f"• attrs appInfos: {sorted(ai.get('data', {}).get('attributes', {}).keys())}")
+st, vi = call(f"{BASE}/appStoreVersions/{vid}")
+if st == 200:
+    print(f"• attrs appStoreVersions: {sorted(vi.get('data', {}).get('attributes', {}).keys())}")
+st, li = call(f"{BASE}/appInfoLocalizations/{loc_id}")
+if st == 200:
+    print(f"• attrs appInfoLocalizations: {sorted(li.get('data', {}).get('attributes', {}).keys())}")
+
 
 
 # 4. Diagnóstico de errores pendientes de la versión (por estado y relacións)
