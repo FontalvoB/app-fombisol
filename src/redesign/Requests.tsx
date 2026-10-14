@@ -398,7 +398,11 @@ export function Requests() {
       {selectedId != null && (
         <Modal
           title="Detalle de la solicitud"
-          status={detail.state.data?.estado ? <Badge>{ESTADO_SOLICITUD_LABELS[detail.state.data.estado]}</Badge> : undefined}
+          status={
+            detail.state.data?.estado ? (
+              <Badge>{ESTADO_SOLICITUD_LABELS[detail.state.data.estado]}</Badge>
+            ) : undefined
+          }
           close={() => setSelectedId(null)}
         >
           {detail.state.status === "loading" ? (
@@ -432,7 +436,9 @@ function SolicitudDetail({
     <>
       <h3>Información de la solicitud</h3>
       <dl className="pn-details">
-        <dt><Icon name="tag" size={18} /> Radicado</dt>
+        <dt>
+          <Icon name="tag" size={18} /> Radicado
+        </dt>
         <dd>{solicitud.radicado ?? "Sin dato"}</dd>
         <dt>Tipo</dt>
         <dd>
@@ -445,7 +451,9 @@ function SolicitudDetail({
         {solicitud.tipo === "OTRO" && (
           <dd>{solicitud.otraNovedad ?? "Sin dato"}</dd>
         )}
-        <dt><Icon name="calendar_month" size={18} /> Periodo</dt>
+        <dt>
+          <Icon name="calendar_month" size={18} /> Periodo
+        </dt>
         <dd>
           {fechaLarga(solicitud.fechaDesde)}
           {solicitud.fechaHasta && solicitud.fechaHasta !== solicitud.fechaDesde
@@ -469,14 +477,18 @@ function SolicitudDetail({
         )}
         <dt>Descripción</dt>
         <dd>{solicitud.descripcion ?? "Sin dato"}</dd>
-        <dt><Icon name="person" size={18} /> Colaborador</dt>
+        <dt>
+          <Icon name="person" size={18} /> Colaborador
+        </dt>
         <dd>
           {solicitud.colaboradorNombre ?? "Sin dato"}
           {solicitud.colaboradorCargo ? ` · ${solicitud.colaboradorCargo}` : ""}
         </dd>
         <dt>Empresa</dt>
         <dd>{solicitud.empresaNombre ?? "Sin dato"}</dd>
-        <dt><Icon name="verified_user" size={18} /> Aprobador</dt>
+        <dt>
+          <Icon name="verified_user" size={18} /> Aprobador
+        </dt>
         <dd>
           {solicitud.aprobadorNombre ?? "Sin dato"}
           {solicitud.aprobadorCargo ? ` · ${solicitud.aprobadorCargo}` : ""}
@@ -1011,11 +1023,15 @@ export function RequestForm() {
               : "Sin dato"}
           </Badge>
           <dl className="pn-details">
-            <dt><Icon name="tag" size={18} /> Radicado</dt>
+            <dt>
+              <Icon name="tag" size={18} /> Radicado
+            </dt>
             <dd>{created.radicado ?? created.id ?? "Sin dato"}</dd>
             <dt>Tipo</dt>
             <dd>{tipoLabel(created.tipo)}</dd>
-            <dt><Icon name="verified_user" size={18} /> Aprobador</dt>
+            <dt>
+              <Icon name="verified_user" size={18} /> Aprobador
+            </dt>
             <dd>{created.aprobadorNombre ?? "Sin dato"}</dd>
           </dl>
           <div className="pn-info">

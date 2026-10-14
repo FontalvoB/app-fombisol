@@ -1,3 +1,14 @@
+/* Match the native WebView even outside the document during iOS overscroll. */
+html:has(.premium-login),
+body:has(.premium-login) {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: #0b3e8f;
+  overflow: hidden !important; /* Override the portal's body overflow: auto. */
+  overscroll-behavior: none;
+}
+
 /* Entrada PeopleNet: tokens locales, sin afectar el resto del portal. */
 .premium-login {
   --pn-font-display: "Manrope", sans-serif;
@@ -17,7 +28,7 @@
   --entry-card-line: #eef3f8;
   --entry-white-soft: rgb(255 255 255 / 96%);
   --entry-copy: rgb(255 255 255 / 92%);
-  --entry-wave-fill: #0a2e5c;
+  --entry-wave-fill: #0b3e8f;
   --entry-light: rgb(145 237 255 / 12%);
   --entry-shade: rgb(14 51 123 / 16%);
   --entry-divider: rgb(255 255 255 / 30%);
@@ -42,17 +53,30 @@
   --entry-ease: cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   isolation: isolate;
-  min-height: 100dvh;
-  overflow: clip;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+  height: -webkit-fill-available;
+  height: 100dvh;
+  min-height: 0;
   padding: max(28px, env(safe-area-inset-top))
-    max(18px, env(safe-area-inset-right)) max(36px, env(safe-area-inset-bottom))
-    max(18px, env(safe-area-inset-left));
+    env(safe-area-inset-right) calc(72px + env(safe-area-inset-bottom))
+    env(safe-area-inset-left);
   color: var(--pn-bg);
   font-family: var(--pn-font-body);
+  background: #0b3e8f;
+}
+.premium-login::before {
+  content: "";
+  position: fixed;
+  inset: -2px;
+  z-index: -2;
+  pointer-events: none;
   background:
     linear-gradient(var(--entry-shade), transparent 75%),
     radial-gradient(ellipse at 75% 0, var(--entry-light), transparent 50%),
-    linear-gradient(170deg, var(--entry-blue) 62%, var(--entry-sky));
+    linear-gradient(170deg, var(--entry-blue) 62%, #0b3e8f);
 }
 .premium-login h1,
 .premium-login h2 {
@@ -69,10 +93,21 @@
   position: relative;
   z-index: 1;
   display: grid;
+  grid-template-rows: 1fr auto;
   gap: 28px;
   width: 100%;
-  max-width: 440px;
-  margin: auto;
+  max-width: 476px;
+  min-height: 0;
+  margin: 0 auto;
+  padding-inline: 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  scroll-padding-block: 16px;
+}
+.entry-layout::-webkit-scrollbar {
+  display: none;
 }
 .entry-story {
   min-width: 0;
@@ -387,11 +422,11 @@
   margin: 20px auto 0;
 }
 .entry-wave {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 80px;
+  position: fixed;
+  bottom: -1px;
+  left: calc(-50px - env(safe-area-inset-left));
+  width: calc(100% + 100px + env(safe-area-inset-left) + env(safe-area-inset-right));
+  height: calc(80px + env(safe-area-inset-bottom));
   z-index: -1;
   pointer-events: none;
 }
@@ -454,6 +489,95 @@
     gap: 36px;
   }
 }
+/* Native screen: only the story (or an oversized form) can scroll. The sheet,
+   wave and background never travel with the content. No extra wrapper needed. */
+@media (max-width: 1023px) {
+  .premium-login {
+    position: fixed;
+    inset: 0;
+    grid-template-rows: minmax(0, 1fr) 24px minmax(0, auto);
+    padding: max(20px, env(safe-area-inset-top)) 0 0;
+    overflow: hidden;
+  }
+  .entry-layout {
+    display: contents;
+  }
+  .entry-story {
+    grid-row: 1;
+    width: 100%;
+    max-width: 476px;
+    min-height: 0;
+    margin: 0 auto;
+    padding-inline: max(28px, env(safe-area-inset-left))
+      max(28px, env(safe-area-inset-right));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    scroll-snap-type: y proximity;
+    scrollbar-width: none;
+  }
+  .entry-story::-webkit-scrollbar {
+    display: none;
+  }
+  .entry-story > :first-child,
+  .entry-features {
+    scroll-snap-align: start;
+  }
+  .entry-story h1 {
+    margin-top: 18px;
+    font-size: clamp(30px, 8.5vw, 36px);
+  }
+  .entry-intro {
+    margin-top: 10px;
+  }
+  .entry-features {
+    margin-top: 18px;
+    padding-bottom: 4px;
+  }
+  .entry-features li {
+    gap: 8px;
+  }
+  .entry-card {
+    grid-row: 3;
+    width: 100%;
+    max-width: 476px;
+    min-height: 0;
+    padding: 24px max(24px, env(safe-area-inset-right))
+      calc(24px + env(safe-area-inset-bottom))
+      max(24px, env(safe-area-inset-left));
+    border-radius: 32px 32px 0 0;
+    box-shadow: 0 -4px 20px rgb(15 64 127 / 8%);
+    overflow-y: auto;
+    overscroll-behavior: none;
+    scroll-padding-block: 16px;
+  }
+  .entry-card h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+  .entry-card form {
+    gap: 10px;
+  }
+  .entry-submit {
+    min-height: 60px;
+  }
+  .entry-card-divider {
+    margin-top: 16px;
+  }
+  .entry-wave {
+    position: relative;
+    grid-row: 2;
+    align-self: end;
+    bottom: -1px;
+    left: -2px;
+    width: calc(100% + 4px);
+    height: 36px;
+    z-index: 0;
+  }
+  .entry-wave-base {
+    fill: none;
+  }
+}
 @media (min-width: 1024px) {
   .premium-login {
     display: grid;
@@ -462,6 +586,7 @@
   }
   .entry-layout {
     max-width: 1056px;
+    grid-template-rows: auto;
     grid-template-columns: minmax(0, 1fr) 440px;
     align-items: center;
     gap: 100px;

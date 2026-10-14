@@ -159,7 +159,7 @@ export function PerformanceChart({
               x2="348"
               y1={180 - ((v - 40) / 60) * 152}
               y2={180 - ((v - 40) / 60) * 152}
-              stroke="var(--pn-surface)"
+              stroke="var(--pn-line)"
               strokeDasharray="3 5"
             />
             <text

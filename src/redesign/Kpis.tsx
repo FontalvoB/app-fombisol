@@ -393,13 +393,23 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
             selected.objective ??
             "Detalle del indicador"
           }
-          status={<Badge>{selected.finalResultValue != null ? "Evaluado" : "Pendiente"}</Badge>}
+          status={
+            <Badge>
+              {selected.finalResultValue != null ? "Evaluado" : "Pendiente"}
+            </Badge>
+          }
           close={() => setDetailId(null)}
         >
           <div className="metric-detail">
             <h3>Resultado y meta</h3>
-            <dl><DetailMeta icon="calendar_month" label="Período">{period ? periodLabel(period) : "Sin dato"}</DetailMeta>
-            <DetailMeta icon="account_tree" label="Área">{selected.areaName ?? selected.dependencyName ?? "Sin dato"}</DetailMeta></dl>
+            <dl>
+              <DetailMeta icon="calendar_month" label="Período">
+                {period ? periodLabel(period) : "Sin dato"}
+              </DetailMeta>
+              <DetailMeta icon="account_tree" label="Área">
+                {selected.areaName ?? selected.dependencyName ?? "Sin dato"}
+              </DetailMeta>
+            </dl>
             {selected.finalResultValue != null &&
             (selected.measurementDirection ?? "").toLowerCase() ===
               "ascendente" &&

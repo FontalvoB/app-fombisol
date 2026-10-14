@@ -667,10 +667,12 @@ export function Reader(_props: {
   const versions = doc.versionHistory ?? [];
 
   return (
-    <DetailSheet title={doc.title ?? "Documento"}
+    <DetailSheet
+      title={doc.title ?? "Documento"}
       status={<Badge>{alreadyConfirmed ? "Leído" : "Por leer"}</Badge>}
       close={() => history.push("/dashboard/documents")}
-      footer={<>
+      footer={
+        <>
           <Button
             secondary
             disabled={downloadStatus === "loading" || doc.id == null}
@@ -679,25 +681,34 @@ export function Reader(_props: {
             <Icon name="download" />{" "}
             {downloadStatus === "loading" ? "Descargando…" : "Descargar"}
           </Button>
-            <Button
-              disabled={
-                alreadyConfirmed ||
-                confirmState.status === "loading" ||
-                doc.id == null ||
-                userId == null
-              }
-              onClick={() => void handleConfirm()}
-            >
-              {alreadyConfirmed
-                ? "Lectura confirmada"
-                : confirmState.status === "loading"
-                  ? "Confirmando…"
-                  : "Confirmar lectura"}
-            </Button>      </>}>
+          <Button
+            disabled={
+              alreadyConfirmed ||
+              confirmState.status === "loading" ||
+              doc.id == null ||
+              userId == null
+            }
+            onClick={() => void handleConfirm()}
+          >
+            {alreadyConfirmed
+              ? "Lectura confirmada"
+              : confirmState.status === "loading"
+                ? "Confirmando…"
+                : "Confirmar lectura"}
+          </Button>{" "}
+        </>
+      }
+    >
       <dl>
-        <DetailMeta icon="description" label="Archivo">{doc.fileName ?? "Sin archivo"}</DetailMeta>
-        <DetailMeta icon="history" label="Versión">{doc.version ?? "Sin dato"}</DetailMeta>
-        <DetailMeta icon="calendar_month" label="Publicado">{wireDate(doc.uploadedAt)}</DetailMeta>
+        <DetailMeta icon="description" label="Archivo">
+          {doc.fileName ?? "Sin archivo"}
+        </DetailMeta>
+        <DetailMeta icon="history" label="Versión">
+          {doc.version ?? "Sin dato"}
+        </DetailMeta>
+        <DetailMeta icon="calendar_month" label="Publicado">
+          {wireDate(doc.uploadedAt)}
+        </DetailMeta>
       </dl>
       {downloadStatus === "error" && (
         <div
@@ -811,7 +822,6 @@ export function Reader(_props: {
                   : "La confirmación se registra con tu usuario real; no se hace automáticamente al abrir."}
               </p>
             </div>
-
           </div>
           {userId == null && !alreadyConfirmed && (
             <p className="pn-info" role="note">

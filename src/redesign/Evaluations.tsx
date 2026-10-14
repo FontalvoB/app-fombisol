@@ -248,8 +248,11 @@ function AutoResultPanel({ auto }: { auto: EvaluationResponse }) {
         )}
       </div>
       {detail && (
-        <Modal title="Tu autoevaluación" close={() => setDetail(null)}>
-          <Badge>{detail.status ?? "Sin dato"}</Badge>
+        <Modal
+          title="Tu autoevaluación"
+          status={<Badge>{detail.status ?? "Sin dato"}</Badge>}
+          close={() => setDetail(null)}
+        >
           <dl className="pn-details">
             <dt>Puntaje global</dt>
             <dd>
@@ -630,26 +633,39 @@ function EvaChat() {
             ))}
             <div ref={endRef} />
             <section className="eva-question" aria-label="Pregunta actual">
-              <span className="pn-badge blue">Paso {stepIndex + 1} de {totalSteps}</span>
-          {currentCriterio ? (
-            <div className="pn-info">
-              <strong>
-                {
-                  M7_BLOQUES[step.kind === "criterio" ? step.bloqueIdx : 0]
-                    .nombre
-                }
-              </strong>
-              <p>{currentCriterio.texto}</p>
-              {[1, 2, 3, 4].map((n) => (
-                <p key={n}>
-                  <strong>{n}:</strong> {currentCriterio.ejemplos[n]}
-                </p>
-              ))}
-            </div>
-          ) : null}
-              {step.kind === "comentario" && <h3>¿Quieres añadir un comentario sobre {currentBloque?.nombre}?</h3>}
-              {step.kind === "narrativa" && <h3>{NARRATIVE_FIELDS[step.nIdx].label}</h3>}
-              {step.kind === "resumen" && <h3>Tu reflexión está lista. Revisa tus respuestas antes de guardar.</h3>}
+              <span className="pn-badge blue">
+                Paso {stepIndex + 1} de {totalSteps}
+              </span>
+              {currentCriterio ? (
+                <div className="pn-info">
+                  <strong>
+                    {
+                      M7_BLOQUES[step.kind === "criterio" ? step.bloqueIdx : 0]
+                        .nombre
+                    }
+                  </strong>
+                  <p>{currentCriterio.texto}</p>
+                  {[1, 2, 3, 4].map((n) => (
+                    <p key={n}>
+                      <strong>{n}:</strong> {currentCriterio.ejemplos[n]}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+              {step.kind === "comentario" && (
+                <h3>
+                  ¿Quieres añadir un comentario sobre {currentBloque?.nombre}?
+                </h3>
+              )}
+              {step.kind === "narrativa" && (
+                <h3>{NARRATIVE_FIELDS[step.nIdx].label}</h3>
+              )}
+              {step.kind === "resumen" && (
+                <h3>
+                  Tu reflexión está lista. Revisa tus respuestas antes de
+                  guardar.
+                </h3>
+              )}
             </section>
           </div>
           {saved ? (
@@ -659,8 +675,14 @@ function EvaChat() {
           ) : step.kind === "criterio" ? (
             <div className="chat-ratings">
               {M7_ESCALA.map((e) => (
-                <button key={e.value} aria-label={`${e.value} · ${e.label}`} title={currentCriterio?.ejemplos[e.value]} onClick={() => rate(e.value)}>
-                  <strong>{e.value}</strong><span>{e.label}</span>
+                <button
+                  key={e.value}
+                  aria-label={`${e.value} · ${e.label}`}
+                  title={currentCriterio?.ejemplos[e.value]}
+                  onClick={() => rate(e.value)}
+                >
+                  <strong>{e.value}</strong>
+                  <span>{e.label}</span>
                 </button>
               ))}
               <span>
@@ -861,7 +883,7 @@ function NanabotChat() {
                 <i /> Disponible
               </small>
             </div>
-            <span>ADMIN</span>
+            <Badge>Admin</Badge>
           </header>
           <div className="chat-messages" aria-live="polite">
             {messages.map((m, i) => (

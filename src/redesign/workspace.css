@@ -1,14 +1,12 @@
 :root {
   --pn-ink: var(--pn-navy);
-  --pn-action: var(--pn-blue);
-  --pn-action-hover: var(--pn-navy);
   --pn-font: "Manrope", sans-serif;
   --pn-font-display: var(--pn-font);
   --pn-font-body: var(--pn-font);
   --ion-font-family: var(--pn-font);
   --pn-radius-sm: 14px;
-  --pn-radius-card: 20px;
-  --pn-radius-lg: 28px;
+  --pn-radius-card: 24px;
+  --pn-radius-lg: 24px;
   --pn-radius-pill: 999px;
   --pn-space-1: 4px;
   --pn-space-2: 8px;
@@ -5055,6 +5053,4 @@ button.pn-button {
   --pn-backdrop: color-mix(in srgb, var(--pn-navy) 48%, transparent);
   --pn-action: var(--pn-blue);
   --pn-action-hover: var(--pn-navy);
-  --pn-radius-card: 24px;
-  --pn-radius-lg: 24px;
 }

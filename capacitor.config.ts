@@ -25,7 +25,9 @@ const config: CapacitorConfig = {
   ios: {
     // Contenido embebido servido bajo el esquema seguro de Capacitor;
     // ATS exige TLS válido en las APIs remotas (cert de prod al día).
-    contentInset: "always",
+    // CSS owns safe-area padding; native insets would expose the WebView behind it.
+    contentInset: "never",
+    backgroundColor: "#0B3E8F",
   },
 };
 
