@@ -7,13 +7,17 @@
   --pn-yellow: #f7ce2e;
   --pn-bg: #fff;
   --pn-line: #e1eaf6;
+  --entry-field-border: #8496ac;
   --pn-muted: #5c7493;
   --entry-blue: #1668d8;
   --entry-sky: #4fa8f2;
   --entry-cyan: #35c4f0;
+  --entry-claim: #4de2ff;
+  --entry-claim-shadow: 0 2px 10px rgb(10 35 80 / 50%);
+  --entry-card-line: #eef3f8;
   --entry-white-soft: rgb(255 255 255 / 96%);
   --entry-copy: rgb(255 255 255 / 92%);
-  --entry-wave-fill: rgb(225 240 255 / 25%);
+  --entry-wave-fill: #0a2e5c;
   --entry-light: rgb(145 237 255 / 12%);
   --entry-shade: rgb(14 51 123 / 16%);
   --entry-divider: rgb(255 255 255 / 30%);
@@ -36,7 +40,6 @@
   --entry-field-radius: 16px;
   --entry-action-radius: 28px;
   --entry-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --entry-motion-duration: 6s;
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
@@ -118,18 +121,8 @@
   color: var(--pn-yellow);
 }
 .entry-claim {
-  position: relative;
-  color: var(--entry-cyan);
-}
-.entry-claim::after {
-  content: attr(data-copy);
-  position: absolute;
-  inset: 0;
-  color: var(--pn-bg);
-  opacity: 0;
-  pointer-events: none;
-  animation: entry-title-shimmer var(--entry-motion-duration) ease-in-out
-    infinite;
+  color: var(--entry-claim);
+  text-shadow: var(--entry-claim-shadow);
 }
 .entry-intro {
   margin: 14px 0 0;
@@ -174,7 +167,6 @@
   box-shadow:
     inset 0 1px 0 var(--entry-divider),
     0 8px 16px rgb(20 40 75 / 8%);
-  animation: entry-tile-bob var(--entry-motion-duration) ease-in-out infinite;
 }
 .entry-tile-1 {
   background: linear-gradient(
@@ -189,7 +181,6 @@
     var(--entry-tile-two-start),
     var(--entry-tile-two-end)
   );
-  animation-delay: -2s;
 }
 .entry-tile-3 {
   background: linear-gradient(
@@ -197,7 +188,6 @@
     var(--entry-tile-three-start),
     var(--entry-tile-three-end)
   );
-  animation-delay: -4s;
 }
 .entry-card {
   width: 100%;
@@ -227,7 +217,7 @@
   align-items: center;
   min-height: 56px;
   padding-left: 14px;
-  border: 1px solid var(--pn-line);
+  border: 1px solid var(--entry-field-border);
   border-radius: var(--entry-field-radius);
   background: var(--pn-bg);
   color: var(--entry-icon);
@@ -298,10 +288,6 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.entry-help[hidden] {
-  display: none;
-}
-.entry-help,
 .entry-error {
   padding: 12px;
   border-radius: 12px;
@@ -309,8 +295,19 @@
   line-height: 1.5;
 }
 .entry-help {
-  background: color-mix(in srgb, var(--pn-line) 45%, var(--pn-bg));
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--pn-muted);
+}
+.premium-login .pn-modal {
+  color: var(--pn-navy);
+  background: var(--pn-bg);
+  font-family: var(--pn-font-body);
+}
+.premium-login .pn-modal .pn-icon-button {
+  min-width: 44px;
+  min-height: 44px;
 }
 .entry-error {
   display: flex;
@@ -384,12 +381,10 @@
   font-size: 13px;
   line-height: 1.5;
 }
-.entry-disclaimer {
-  margin: 24px 0 0;
-  text-align: center;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--pn-muted);
+.entry-card-divider {
+  border-top: 1px solid var(--entry-card-line);
+  width: 85%;
+  margin: 20px auto 0;
 }
 .entry-wave {
   position: absolute;
@@ -400,7 +395,7 @@
   z-index: -1;
   pointer-events: none;
 }
-.entry-wave-light {
+.entry-wave-base {
   fill: var(--entry-wave-fill);
 }
 .entry-wave-accent {
@@ -436,19 +431,6 @@
     transform: rotate(360deg);
   }
 }
-@keyframes entry-title-shimmer {
-  0%,
-  35%,
-  100% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.16;
-  }
-  65% {
-    opacity: 0;
-  }
-}
 @keyframes entry-button-shimmer {
   0%,
   55% {
@@ -462,15 +444,6 @@
   100% {
     transform: translateX(500%) skewX(-20deg);
     opacity: 0;
-  }
-}
-@keyframes entry-tile-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
   }
 }
 @media (min-width: 600px) and (max-width: 1023px) {
@@ -531,10 +504,6 @@
   }
   .entry-field input::placeholder {
     font-size: 15px;
-  }
-  .entry-disclaimer {
-    margin-top: 28px;
-    font-size: 13px;
   }
   .entry-wave {
     height: 100px;

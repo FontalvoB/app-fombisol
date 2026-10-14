@@ -1,9 +1,9 @@
-import { useId, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useHistory } from "react-router-dom";
-import { Icon } from "./shared";
+import { Icon, Modal } from "./shared";
 import { login, toApiError } from "../lib/api";
-import logo from "./assets/peoplenet-mark.png";
+import logo from "./assets/peoplenet-mark.svg";
 import "./login.css";
 
 const features = [
@@ -14,35 +14,19 @@ const features = [
 const entryEase = [0.22, 1, 0.36, 1] as const;
 
 function LoginBrand() {
-  const filterId = useId();
   return (
     <div
       className="entry-brand"
       role="img"
       aria-label="PeopleNet, Gestión humana"
     >
-      {/* Se conserva el isotipo original; el filtro elimina únicamente su fondo blanco. */}
-      <svg
+      <img
         className="entry-brand-mark"
-        viewBox="0 0 128 139"
-        aria-hidden="true"
-      >
-        <defs>
-          <filter id={filterId} colorInterpolationFilters="sRGB">
-            <feColorMatrix
-              type="matrix"
-              values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -4 -4 -4 0 11.6"
-            />
-            <feComposite in="SourceGraphic" operator="in" />
-          </filter>
-        </defs>
-        <image
-          href={logo}
-          width="128"
-          height="139"
-          filter={`url(#${filterId})`}
-        />
-      </svg>
+        src={logo}
+        width="128"
+        height="139"
+        alt=""
+      />
       <div>
         <span className="entry-wordmark">
           people<span>net</span>
@@ -75,6 +59,11 @@ export function Login() {
   });
   const [show, setShow] = useState(false);
   const [help, setHelp] = useState(false);
+  const helpButton = useRef<HTMLButtonElement>(null);
+  const closeHelp = () => {
+    setHelp(false);
+    requestAnimationFrame(() => helpButton.current?.focus({ preventScroll: true }));
+  };
   const [username, setUsername] = useState(() => {
     try {
       return localStorage.getItem("pn-remember") || "";
@@ -129,13 +118,13 @@ export function Login() {
         aria-hidden="true"
       >
         <path
-          className="entry-wave-light"
-            d="M0 150C460 10 820 240 1440 95V240H0Z"
+          className="entry-wave-base"
+          d="M0 150C460 10 820 240 1440 95V240H0Z"
         />
         <path
           className="entry-wave-accent"
-            d="M0 150C460 10 820 240 1440 95"
-            vectorEffect="non-scaling-stroke"
+          d="M0 150C460 10 820 240 1440 95"
+          vectorEffect="non-scaling-stroke"
         />
       </svg>
       <div className="entry-layout">
@@ -148,7 +137,7 @@ export function Login() {
               Tu talento.
             </motion.span>
             <motion.span className="entry-title-line" {...entrance(0.16)}>
-              <span className="entry-claim" data-copy="Todo">
+              <span className="entry-claim">
                 Todo
               </span>{" "}
               <span className="entry-title-accent">más fácil.</span>
@@ -243,16 +232,13 @@ export function Login() {
             <button
               type="button"
               className="entry-help-toggle"
+              ref={helpButton}
               aria-expanded={help}
-              aria-controls="entry-help"
-              onClick={() => setHelp(!help)}
+              aria-haspopup="dialog"
+              onClick={() => setHelp(true)}
             >
               ¿Olvidaste tu contraseña?
             </button>
-            <div id="entry-help" className="entry-help" hidden={!help}>
-              Si olvidaste tu contraseña o tu usuario, contacta a Gestión Humana
-              para recuperar tu acceso.
-            </div>
             {error && (
               <p id="entry-error" role="alert" className="entry-error">
                 <Icon name="error" />
@@ -290,11 +276,17 @@ export function Login() {
               Tu acceso está bloqueado hasta cambiar la contraseña
             </p>
           )}
-          <p className="entry-disclaimer">
-            Tu espacio personal, en un solo lugar.
-          </p>
+          <div className="entry-card-divider" aria-hidden="true" />
         </motion.section>
       </div>
+      {help && (
+        <Modal title="Recupera tu acceso" close={closeHelp}>
+          <p className="entry-help">
+            Si olvidaste tu contraseña o tu usuario, contacta a Gestión Humana
+            para recuperar tu acceso.
+          </p>
+        </Modal>
+      )}
     </main>
   );
 }

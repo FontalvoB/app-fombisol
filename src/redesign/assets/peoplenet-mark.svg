@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="139" viewBox="0 0 128 139" fill="none">
+  <!-- Contornos del isotipo de referencia, con fondo transparente y sin filtros. -->
+  <defs>
+    <linearGradient id="corona" x1="14" y1="64" x2="99" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0064FF"/><stop offset=".48" stop-color="#00BFFF"/><stop offset="1" stop-color="#00E5EC"/>
+    </linearGradient>
+    <linearGradient id="arco" x1="47" y1="27" x2="118" y2="83" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0043F4"/><stop offset=".43" stop-color="#0032D9"/><stop offset="1" stop-color="#009CF5"/>
+    </linearGradient>
+    <linearGradient id="lateral" x1="101" y1="30" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00DAEF"/><stop offset="1" stop-color="#008CEB"/>
+    </linearGradient>
+    <linearGradient id="apoyo" x1="26" y1="77" x2="40" y2="107" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#007EF6"/><stop offset=".55" stop-color="#0034B8"/><stop offset="1" stop-color="#001B88"/>
+    </linearGradient>
+    <linearGradient id="cuerpo" x1="85" y1="58" x2="23" y2="130" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#36F2F1"/><stop offset=".45" stop-color="#00C9FA"/><stop offset="1" stop-color="#006EFF"/>
+    </linearGradient>
+    <linearGradient id="cabeza" x1="49" y1="39" x2="62" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF03B"/><stop offset=".45" stop-color="#FFC000"/><stop offset="1" stop-color="#FF7900"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#corona)" d="M4 61C9 35 34 8 61 4C89-1 116 14 123 40C131 68 115 91 90 98L63 103C79 89 91 72 89 58C86 37 68 28 50 35C31 41 16 56 8 67C5 70 2 66 4 61Z"/>
+  <path fill="url(#lateral)" d="M72 4C97 4 117 19 123 40C131 68 115 91 90 98L63 103C85 89 102 76 104 57C106 35 93 14 72 4Z"/>
+  <path fill="url(#arco)" d="M4 61C14 42 35 25 57 24C80 22 99 36 103 55C108 76 93 93 73 100L60 104C72 87 80 72 79 56C79 42 69 32 56 33C36 34 18 53 8 67C5 70 2 66 4 61Z"/>
+  <path fill="url(#apoyo)" d="M17 118L17 91C17 79 24 71 32 71C42 71 48 79 48 87L42 114Z"/>
+  <path fill="url(#cuerpo)" d="M17 118C17 99 37 84 58 71C68 65 75 59 80 54C86 48 93 52 93 61C93 74 79 86 65 95C56 101 54 109 53 118C51 131 44 138 32 138C22 138 17 130 17 118Z"/>
+  <circle cx="54.5" cy="53.5" r="15.5" fill="url(#cabeza)"/>
+</svg>
