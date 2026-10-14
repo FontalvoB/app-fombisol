@@ -91,22 +91,26 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
-      - name: Version code monotónico (base + run number)
-        run: |
-          VC=$(( ${{ inputs.version_base }} + ${{ github.run_number }} ))
-          echo "VERSION_CODE=$VC" >> "$GITHUB_ENV"
-          sed -i "s/^        versionCode .*/        versionCode $VC/" android/app/build.gradle
-          grep "versionCode" android/app/build.gradle | head -1
-
-      - name: Build AAB firmado
-        working-directory: android
-        run: ./gradlew bundleRelease --no-daemon
-
       - name: Autenticación Play (SA key o ADC)
         env:
           GOOGLE_ADC_JSON: ${{ secrets.GOOGLE_ADC_JSON }}
           GOOGLE_SA_KEY_JSON: ${{ secrets.GOOGLE_SA_KEY_JSON }}
         run: echo "$GOOGLE_ADC_JSON" | base64 --decode > /tmp/adc.json
+
+      - name: Version code monotónico GLOBAL (máx en Play vs base+N)
+        env:
+          GOOGLE_ADC_FILE: /tmp/adc.json
+        run: |
+          MAXUSED=$(python3 scripts/play_publish.py --query-max)
+          VC=$(( ${{ inputs.version_base }} + ${{ github.run_number }} ))
+          [ "$MAXUSED" -ge "$VC" ] && VC=$(( MAXUSED + 1 ))
+          echo "VERSION_CODE=$VC" >> "$GITHUB_ENV"
+          sed -i "s/^        versionCode .*/        versionCode $VC/" android/app/build.gradle
+          echo "versionCode objetivo: $VC (máx ya usado en Play: $MAXUSED)"
+
+      - name: Build AAB firmado
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
 
       - name: Publicar en Google Play (${{ inputs.track }})
         env:

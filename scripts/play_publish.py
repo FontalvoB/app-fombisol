@@ -89,8 +89,29 @@ def main():
     ap.add_argument("--notes-file", default=None,
                     help="Texto de notas de la versión (si no, usa android/app/src/main/play/release-notes/en-US/internal.txt)")
     ap.add_argument("--status", default="completed", choices=["completed", "draft", "halted"])
+    ap.add_argument("--query-max", action="store_true",
+                    help="Auth + GET pistas → imprimir versionCode máximo usado y salir")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
+
+    if args.query_max:
+        import play_auth
+        token = play_auth.get_play_token()
+        api = PlayApi(token)
+        edit = api.call("POST", "/edits")
+        try:
+            mx = 0
+            counters = []
+            tracks = api.call("GET", f"/edits/{edit['id']}/tracks", ok_empty=True)
+            for t in tracks.get("tracks", []):
+                for rel in t.get("releases", []):
+                    counters.extend(rel.get("versionCodes", []))
+            for vc in counters:
+                mx = max(mx, int(vc))
+            print(mx)
+        finally:
+            api.call("DELETE", f"/edits/{edit['id']}", ok_empty=True)
+        return
 
     if not os.path.exists(args.aab):
         die(f"No existe el AAB: {args.aab}")
