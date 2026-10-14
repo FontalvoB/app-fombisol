@@ -35,3 +35,6 @@ node_modules/
 # Python cache
 __pycache__/
 *.pyc
+
+# Capturas locales de QA Playwright
+.playwright-mcp/

@@ -1,7 +1,57 @@
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useHistory } from "react-router-dom";
-import { Icon, Brand, Button } from "./shared";
+import { Icon } from "./shared";
 import { login, toApiError } from "../lib/api";
+import logo from "./assets/peoplenet-mark.png";
+import "./login.css";
+
+const features = [
+  ["calendar_month", "Novedades"],
+  ["description", "Trámites"],
+  ["person", "Mi información"],
+];
+const entryEase = [0.22, 1, 0.36, 1] as const;
+
+function LoginBrand() {
+  const filterId = useId();
+  return (
+    <div
+      className="entry-brand"
+      role="img"
+      aria-label="PeopleNet, Gestión humana"
+    >
+      {/* Se conserva el isotipo original; el filtro elimina únicamente su fondo blanco. */}
+      <svg
+        className="entry-brand-mark"
+        viewBox="0 0 128 139"
+        aria-hidden="true"
+      >
+        <defs>
+          <filter id={filterId} colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -4 -4 -4 0 11.6"
+            />
+            <feComposite in="SourceGraphic" operator="in" />
+          </filter>
+        </defs>
+        <image
+          href={logo}
+          width="128"
+          height="139"
+          filter={`url(#${filterId})`}
+        />
+      </svg>
+      <div>
+        <span className="entry-wordmark">
+          people<span>net</span>
+        </span>
+        <span className="entry-tagline">GESTIÓN HUMANA</span>
+      </div>
+    </div>
+  );
+}
 
 /**
  * M1 — Login real contra POST /api/auth/login.
@@ -13,9 +63,25 @@ import { login, toApiError } from "../lib/api";
  */
 export function Login() {
   const history = useHistory();
+  const reduceMotion = useReducedMotion();
+  const entrance = (delay: number, scale = 1) => ({
+    initial: reduceMotion ? (false as const) : { opacity: 0, y: 16, scale },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    transition: {
+      duration: reduceMotion ? 0 : 0.38,
+      delay: reduceMotion ? 0 : delay,
+      ease: entryEase,
+    },
+  });
   const [show, setShow] = useState(false);
   const [help, setHelp] = useState(false);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => {
+    try {
+      return localStorage.getItem("pn-remember") || "";
+    } catch {
+      return "";
+    }
+  });
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -55,136 +121,180 @@ export function Login() {
   }
 
   return (
-    <main className="pn-login">
-      <section className="pn-login-story">
-        <Brand />
-        <div className="login-story-copy">
-          <span className="login-kicker">
-            <i /> TU TALENTO. NUESTRAS POSIBILIDADES.
-          </span>
-          <h1>
-            El mejor lugar
-            <br />
-            para <em>crecer,</em>
-            <br />
-            es juntos.
+    <main className="premium-login" data-reduced-motion={Boolean(reduceMotion)}>
+      <svg
+        className="entry-wave"
+        viewBox="0 0 1440 240"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path
+          className="entry-wave-light"
+            d="M0 150C460 10 820 240 1440 95V240H0Z"
+        />
+        <path
+          className="entry-wave-accent"
+            d="M0 150C460 10 820 240 1440 95"
+            vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <div className="entry-layout">
+        <section className="entry-story" aria-labelledby="entry-title">
+          <motion.div {...entrance(0, 0.94)}>
+            <LoginBrand />
+          </motion.div>
+          <h1 id="entry-title" aria-label="Tu talento. Todo más fácil.">
+            <motion.span className="entry-title-line" {...entrance(0.08)}>
+              Tu talento.
+            </motion.span>
+            <motion.span className="entry-title-line" {...entrance(0.16)}>
+              <span className="entry-claim" data-copy="Todo">
+                Todo
+              </span>{" "}
+              <span className="entry-title-accent">más fácil.</span>
+            </motion.span>
           </h1>
-          <p>
-            Un espacio que conecta lo que haces,
+          <motion.p className="entry-intro" {...entrance(0.24)}>
+            Tus trámites de talento humano,
             <br />
-            lo que necesitas y lo que puedes llegar a ser.
-          </p>
-          <div className="login-art">
-            <div className="art-orbit" />
-            <div className="art-arch" />
-            <div className="art-yellow" />
-            <div className="art-dot" />
-            <div className="art-card">
-              <Icon name="trending_up" />
-              <span>
-                Pequeños pasos.<strong>Grandes logros.</strong>
-              </span>
-              <span className="art-bars">
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="login-bottom">
-          <span>Personas primero. Siempre.</span>
-          <span>Hecho para ti ✦</span>
-        </div>
-      </section>
-      <section className="pn-login-form">
-        <span className="login-top">TU PORTAL DE TALENTO HUMANO</span>
-        <div className="login-form-inner">
-          <span className="welcome-icon">
-            <Icon name="waving_hand" size={26} />
-          </span>
-          <h2>Qué bueno verte de nuevo.</h2>
-          <p>Tu próximo gran día empieza aquí.</p>
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="login-username">
+            en un solo lugar.
+          </motion.p>
+          <ul
+            className="entry-features"
+            aria-label="Tu espacio de talento humano"
+          >
+            {features.map(([icon, label], index) => (
+              <motion.li key={icon} {...entrance(0.3 + index * 0.07)}>
+                <span className={`entry-tile entry-tile-${index + 1}`}>
+                  <Icon name={icon} size={30} />
+                </span>
+                <span>{label}</span>
+              </motion.li>
+            ))}
+          </ul>
+        </section>
+        <motion.section
+          className="entry-card"
+          aria-labelledby="entry-welcome"
+          initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : {
+                  type: "spring",
+                  visualDuration: 0.45,
+                  bounce: 0.08,
+                  delay: 0.35,
+                }
+          }
+        >
+          <h2 id="entry-welcome">Bienvenido de nuevo</h2>
+          <form onSubmit={handleSubmit} aria-busy={submitting}>
+            <label className="entry-sr-only" htmlFor="login-username">
               Usuario o correo corporativo
             </label>
-            <input
-              id="login-username"
-              type="text"
-              placeholder="nombre.usuario"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={submitting}
-              required
-            />
-            <label htmlFor="login-password">Contraseña</label>
-            <div className="password-field">
+            <div className="entry-field">
+              <Icon name="person" size={24} />
+              <input
+                id="login-username"
+                type="text"
+                placeholder="Usuario o correo corporativo"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={submitting}
+                required
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? "entry-error" : undefined}
+              />
+            </div>
+            <label className="entry-sr-only" htmlFor="login-password">
+              Contraseña
+            </label>
+            <div className="entry-field">
+              <Icon name="lock" size={24} />
               <input
                 id="login-password"
                 type={show ? "text" : "password"}
-                placeholder="Ingresa tu contraseña"
+                placeholder="Contraseña"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={submitting}
                 required
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? "entry-error" : undefined}
               />
               <button
+                className="entry-eye"
                 type="button"
-                aria-label={
-                  show ? "Ocultar contraseña" : "Mostrar contraseña"
-                }
+                aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={show}
+                aria-controls="login-password"
                 onClick={() => setShow(!show)}
                 disabled={submitting}
               >
-                <Icon name={show ? "visibility_off" : "visibility"} />
+                <Icon name={show ? "visibility_off" : "visibility"} size={22} />
               </button>
             </div>
-            <div className="login-options">
-              <span>Accede con tus credenciales.</span>
-              <button type="button" onClick={() => setHelp(!help)}>
-                ¿Necesitas ayuda?
-              </button>
+            <button
+              type="button"
+              className="entry-help-toggle"
+              aria-expanded={help}
+              aria-controls="entry-help"
+              onClick={() => setHelp(!help)}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+            <div id="entry-help" className="entry-help" hidden={!help}>
+              Si olvidaste tu contraseña o tu usuario, contacta a Gestión Humana
+              para recuperar tu acceso.
             </div>
-            {help && (
-              <div className="pn-info">
-                Si olvidaste tu contraseña o tu usuario, contacta a Gestión
-                Humana para recuperar tu acceso.
-              </div>
-            )}
             {error && (
-              <p role="alert" className="pn-info">
-                {error}
+              <p id="entry-error" role="alert" className="entry-error">
+                <Icon name="error" />
+                <span>{error}</span>
               </p>
             )}
-            <Button type="submit" disabled={submitting}>
-              {submitting ? (
-                "Iniciando sesión…"
-              ) : (
-                <>
-                  Iniciar sesión <Icon name="arrow_forward" size={18} />
-                </>
-              )}
-            </Button>
+            <motion.button
+              className="entry-submit"
+              type="submit"
+              disabled={submitting}
+              whileHover={reduceMotion || submitting ? undefined : { y: -1 }}
+              whileTap={
+                reduceMotion || submitting ? undefined : { scale: 0.98 }
+              }
+              transition={{
+                y: { duration: 0.25, ease: entryEase },
+                scale: { duration: 0.12 },
+              }}
+            >
+              <span>
+                {submitting ? (
+                  <>
+                    <span className="entry-spinner" aria-hidden="true" />
+                    Iniciando sesión…
+                  </>
+                ) : (
+                  "Iniciar sesión"
+                )}
+              </span>
+              {!submitting && <Icon name="arrow_forward" size={26} />}
+            </motion.button>
           </form>
           {passwordChangeRequired && (
-            <div className="login-divider">
-              <span>Tu acceso está bloqueado hasta cambiar la contraseña</span>
-            </div>
+            <p className="entry-blocked">
+              Tu acceso está bloqueado hasta cambiar la contraseña
+            </p>
           )}
-          <div className="login-trust">
-            <Icon name="verified_user" size={16} />
-            <span>Tu espacio personal, en un solo lugar.</span>
-          </div>
-        </div>
-        <div className="login-form-footer">
-          © 2026 PeopleNet <span>Conectamos personas y posibilidades.</span>
-        </div>
-      </section>
+          <p className="entry-disclaimer">
+            Tu espacio personal, en un solo lugar.
+          </p>
+        </motion.section>
+      </div>
     </main>
   );
 }
