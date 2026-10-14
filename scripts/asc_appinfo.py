@@ -121,9 +121,17 @@ ver_str = v["attributes"].get("versionString")
 print(f"• versión descartable {ver_str}: {vid} estado={v['attributes'].get('appStoreState')}")
 st, pv = call(f"{BASE}/appStoreVersions/{vid}", "PATCH", {
     "data": {"type": "appStoreVersions", "id": vid,
-             "attributes": {"contentRightsDeclaration": "DOES_NOT_USE_THIRD_PARTY_CONTENT",
-                            "copyright": "2026 Fombisol"}}})
-print(("✓ contentRightsDeclaration + copyright (version) →PATCH" if st == 200 else f"✗ version PATCH {st}: {json.dumps(pv)[:250]}"))
+             "attributes": {}}})
+print(f"• version PATCH (vacía, sanity) HTTP {st}")
+
+# 4. copyright + contentRightsDeclaration — NIVEL APP (apps/{id})
+st, pa = call(f"{BASE}/apps/{app_id}", "PATCH", {
+    "data": {"type": "apps", "id": app_id,
+             "attributes": {"copyright": "2026 Fombisol",
+                            "contentRightsDeclaration":
+                                "DOES_NOT_USE_THIRD_PARTY_CONTENT"}}})
+print(("✓ copyright + contentRightsDeclaration (app-level) →PATCH" if st == 200
+       else f"✗ app PATCH {st}: {json.dumps(pa)[:350]}"))
 
 # 4. Diagnóstico de errores pendientes de la versión (por estado y relacións)
 st, vrel = call(f"{BASE}/appStoreVersions/{vid}?include=build,appStoreVersionLocalizations&fields[builds]=version,processingState")
