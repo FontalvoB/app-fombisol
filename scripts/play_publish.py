@@ -83,8 +83,8 @@ class PlayApi:
 # ── Autenticación (play_auth: SA key preferida → ADC impersonación) ─────────
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--aab", required=True)
-    ap.add_argument("--version-code", type=int, required=True)
+    ap.add_argument("--aab")  # condicional: no exigido con --query-max
+    ap.add_argument("--version-code", type=int)  # condicional
     ap.add_argument("--track", default="internal")
     ap.add_argument("--notes-file", default=None,
                     help="Texto de notas de la versión (si no, usa android/app/src/main/play/release-notes/en-US/internal.txt)")
@@ -113,8 +113,13 @@ def main():
             api.call("DELETE", f"/edits/{edit['id']}", ok_empty=True)
         return
 
-    if not os.path.exists(args.aab):
-        die(f"No existe el AAB: {args.aab}")
+    if not args.query_max:
+        if not args.aab:
+            die("Falta --aab (o usa --query-max)")
+        if not args.version_code:
+            die("Falta --version-code (o usa --query-max)")
+        if not os.path.exists(args.aab):
+            die(f"No existe el AAB: {args.aab}")
 
     notes_text = None  # (reemplazado abajo por multi-idioma)
     notes_dir = os.path.join(os.path.dirname(__file__), "..",
