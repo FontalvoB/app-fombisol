@@ -34,7 +34,7 @@ import {
   Brand,
   Button,
   Badge,
-  Heading,
+  PageHero,
   Search,
   Tabs,
   LoadingNote,
@@ -158,8 +158,8 @@ const PDF_FRAME_STYLE = {
   height: "70vh",
   minHeight: 420,
   border: "1px solid var(--pn-line)",
-  borderRadius: 8,
-  background: "#fff",
+  borderRadius: "var(--pn-radius-sm)",
+  background: "var(--pn-surface)",
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,21 +212,24 @@ export function Documents(_props: { reads?: string[] }) {
     if (searching) {
       base =
         searchResults.state.status === "success"
-          ? searchResults.state.data ?? []
+          ? (searchResults.state.data ?? [])
           : null;
     } else if (categoryValue != null) {
       base =
         categoryPage.state.status === "success"
-          ? categoryPage.state.data?.content ?? []
+          ? (categoryPage.state.data?.content ?? [])
           : null;
     } else {
       base =
-        documents.state.status === "success" ? documents.state.data ?? [] : null;
+        documents.state.status === "success"
+          ? (documents.state.data ?? [])
+          : null;
     }
     if (base == null) return null;
     if (!idsKnown || readFilter === "Todos") return base;
     return base.filter((d) => {
-      if (d.id == null) return readFilter !== "Por leer" && readFilter !== "Leídos";
+      if (d.id == null)
+        return readFilter !== "Por leer" && readFilter !== "Leídos";
       const read = confirmedSet.has(d.id);
       return readFilter === "Por leer" ? !read : read;
     });
@@ -260,17 +263,18 @@ export function Documents(_props: { reads?: string[] }) {
   // Documento destacado: el primero marcado obligatorio (o el primero real).
   const featured =
     documents.state.status === "success"
-      ? documents.state.data?.find((d) => d.isRequired === true) ??
+      ? (documents.state.data?.find((d) => d.isRequired === true) ??
         documents.state.data?.[0] ??
-        null
+        null)
       : null;
 
   // Progreso de lectura real (conteo del servidor, no storage demo).
   const allDocs =
-    documents.state.status === "success" ? documents.state.data ?? [] : null;
+    documents.state.status === "success" ? (documents.state.data ?? []) : null;
   const totalDocs = allDocs?.length ?? 0;
   const readCount = idsKnown
-    ? (allDocs ?? []).filter((d) => d.id != null && confirmedSet.has(d.id)).length
+    ? (allDocs ?? []).filter((d) => d.id != null && confirmedSet.has(d.id))
+        .length
     : 0;
 
   // Tabs de categoría con los labels reales del catálogo del servidor.
@@ -284,7 +288,7 @@ export function Documents(_props: { reads?: string[] }) {
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="EL CONOCIMIENTO NOS CONECTA"
         title="Tu biblioteca de documentos"
         description="Información útil, políticas claras y todo lo que necesitas conocer."
@@ -382,7 +386,11 @@ export function Documents(_props: { reads?: string[] }) {
         />
       )}
       {activeState.status === "error" && list != null && (
-        <div className="pn-info" role="alert" style={{ color: "#b3261e" }}>
+        <div
+          className="pn-info"
+          role="alert"
+          style={{ color: "var(--pn-danger)" }}
+        >
           <Icon name="cloud_off" size={16} /> No se pudo actualizar la lista:{" "}
           {activeState.error}{" "}
           <Button secondary onClick={retryAll}>
@@ -423,8 +431,7 @@ export function Documents(_props: { reads?: string[] }) {
                 </div>
                 <h3>{d.title ?? "Sin título"}</h3>
                 <p>
-                  Versión {d.version ?? "Sin dato"} ·{" "}
-                  {wireDate(d.uploadedAt)}
+                  Versión {d.version ?? "Sin dato"} · {wireDate(d.uploadedAt)}
                 </p>
                 <div>
                   <span>
@@ -569,7 +576,9 @@ export function Reader(_props: {
   }>({ status: "idle", message: null });
 
   const alreadyConfirmed =
-    idsKnown && doc?.id != null ? confirmedIds?.includes(doc.id) === true : false;
+    idsKnown && doc?.id != null
+      ? confirmedIds?.includes(doc.id) === true
+      : false;
 
   const handleConfirm = useCallback(async () => {
     if (!doc || doc.id == null) return;
@@ -623,7 +632,7 @@ export function Reader(_props: {
           <p>
             {documentId == null
               ? "El enlace no es válido. Vuelve a la biblioteca."
-              : detail.state.error ?? "Fue eliminado o nunca existió."}
+              : (detail.state.error ?? "Fue eliminado o nunca existió.")}
           </p>
           <Link className="pn-button" to="/dashboard/documents">
             Ir a la biblioteca
@@ -662,7 +671,7 @@ export function Reader(_props: {
       <Link className="pn-back" to="/dashboard/documents">
         <Icon name="arrow_back" size={17} /> Volver a la biblioteca
       </Link>
-      <Heading
+      <PageHero
         eyebrow={categoryLabel(doc.category, categories.state.data)}
         title={doc.title ?? "Sin título"}
         description={`Versión ${doc.version ?? "Sin dato"} · ${wireDate(
@@ -680,7 +689,11 @@ export function Reader(_props: {
         }
       />
       {downloadStatus === "error" && (
-        <div className="pn-info" role="alert" style={{ color: "#b3261e" }}>
+        <div
+          className="pn-info"
+          role="alert"
+          style={{ color: "var(--pn-danger)" }}
+        >
           <Icon name="cloud_off" size={16} /> {downloadError}{" "}
           <Button secondary onClick={() => void handleDownload()}>
             Reintentar
@@ -693,8 +706,7 @@ export function Reader(_props: {
           <div className="pn-info">
             {doc.fileName ?? "Sin archivo"}
             <br />
-            {doc.fileSizeFormatted ?? "Sin dato"} ·{" "}
-            {mimeLabel}
+            {doc.fileSizeFormatted ?? "Sin dato"} · {mimeLabel}
             <br />
             {doc.isRequired ? "Lectura obligatoria" : "Lectura opcional"}
           </div>
@@ -741,9 +753,8 @@ export function Reader(_props: {
               ) : (
                 <div className="pn-info" role="alert">
                   <Icon name="cloud_off" size={16} /> No pudimos mostrar el
-                  archivo en pantalla.{" "}
-                  {viewerError ? `${viewerError} ` : ""}Puedes intentar la
-                  descarga{" "}
+                  archivo en pantalla. {viewerError ? `${viewerError} ` : ""}
+                  Puedes intentar la descarga{" "}
                   <Button secondary onClick={() => void handleDownload()}>
                     Descargar archivo
                   </Button>
@@ -785,7 +796,10 @@ export function Reader(_props: {
             )}
           </section>
           <div className="paper-end">
-            <Icon name={alreadyConfirmed ? "verified" : "history_edu"} size={25} />
+            <Icon
+              name={alreadyConfirmed ? "verified" : "history_edu"}
+              size={25}
+            />
             <div>
               <h3>
                 {alreadyConfirmed

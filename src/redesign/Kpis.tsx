@@ -4,7 +4,8 @@ import {
   Icon,
   Button,
   Badge,
-  Heading,
+  PageHero,
+  SectionTitle,
   Tabs,
   download,
   Modal,
@@ -85,7 +86,9 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
   const items = rows.filter(
     (r) =>
       filter === "Todos" ||
-      (filter === "Evaluado" ? r.finalResultValue != null : r.finalResultValue == null),
+      (filter === "Evaluado"
+        ? r.finalResultValue != null
+        : r.finalResultValue == null),
   );
   const selected = rows.find((r) => r.id != null && r.id === detailId) ?? null;
 
@@ -123,11 +126,12 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
     notify("Reporte descargado.");
   };
 
-  const canExport = monthIndicators.state.status === "success" && rows.length > 0;
+  const canExport =
+    monthIndicators.state.status === "success" && rows.length > 0;
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="TU ESFUERZO, EN NÚMEROS"
         title="Vas por más."
         description="Cada paso cuenta. Mira todo lo que estás logrando."
@@ -142,7 +146,9 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
           <Icon name="calendar_month" size={18} /> Tu desempeño
         </span>
         {noEmployee ? (
-          <LoadingNote label="Usuario sin colaborador asociado." />
+          <p className="pn-info" role="status">
+            Usuario sin colaborador asociado.
+          </p>
         ) : indicatorsAll.state.status === "loading" ? (
           <LoadingNote label="Cargando períodos…" />
         ) : indicatorsAll.state.status === "error" ? (
@@ -152,13 +158,17 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
             onRetry={indicatorsAll.reload}
           />
         ) : !periods.length ? (
-          <LoadingNote label="Sin períodos con indicadores todavía." />
+          <p className="pn-info" role="status">
+            Sin períodos con indicadores todavía.
+          </p>
         ) : (
           <select
             aria-label="Periodo"
             value={period ? periodLabel(period) : ""}
             onChange={(e) => {
-              const chosen = periods.find((p) => periodLabel(p) === e.target.value);
+              const chosen = periods.find(
+                (p) => periodLabel(p) === e.target.value,
+              );
               if (chosen) setSelectedPeriod(chosen);
             }}
           >
@@ -252,15 +262,15 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
           </section>
         </div>
       )}
-      <div className="pn-section-heading vivid-metrics-heading">
-        <div>
-          <h2>El detalle de tus metas</h2>
-          <p>Enfócate, avanza y celebra.</p>
-        </div>
-        <span className="vivid-count">
-          {String(items.length).padStart(2, "0")}
-        </span>
-      </div>
+      <SectionTitle
+        title="El detalle de tus metas"
+        description="Enfócate, avanza y celebra."
+        action={
+          <span className="vivid-count">
+            {String(items.length).padStart(2, "0")}
+          </span>
+        }
+      />
       {period && (
         <div className="pn-toolbar">
           <Tabs
@@ -401,7 +411,10 @@ export function Kpis({ notify }: { notify: (v: string) => void }) {
               <div>
                 <span>Tu resultado</span>
                 <strong>
-                  {formatMeasure(selected.finalResultValue, selected.measurementUnit)}
+                  {formatMeasure(
+                    selected.finalResultValue,
+                    selected.measurementUnit,
+                  )}
                 </strong>
               </div>
               <div>

@@ -10,7 +10,14 @@ import {
 } from "react-router-dom";
 import { Icon, useSaved, Avatar, Brand, Search } from "./shared";
 import { nav } from "./data";
-import { clearAllUserStorage, isAuthenticated, readSession, validateSession } from "../lib/api";
+import {
+  clearAllUserStorage,
+  displayName,
+  initialsOf,
+  isAuthenticated,
+  readSession,
+  validateSession,
+} from "../lib/api";
 import { Home } from "./Home";
 import { Login } from "./Login";
 import { Kpis } from "./Kpis";
@@ -25,6 +32,8 @@ export default function Workspace() {
   const history = useHistory();
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLElement>(null);
+  const previousRoute = useRef(location.pathname);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const reduceMotion = useReducedMotion();
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
@@ -45,6 +54,10 @@ export default function Workspace() {
           "a[href], button:not([disabled])",
         ) || [],
       ).filter((el) => el.getClientRects().length > 0);
+    const background = document.querySelectorAll(
+      ".pn-main, .vivid-bottom-nav, .pn-floating-eva",
+    );
+    background.forEach((el) => el.setAttribute("inert", ""));
     focusable()[0]?.focus();
     const trapFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
@@ -62,6 +75,7 @@ export default function Workspace() {
     panel?.addEventListener("keydown", trapFocus);
     return () => {
       panel?.removeEventListener("keydown", trapFocus);
+      background.forEach((el) => el.removeAttribute("inert"));
       previous?.focus();
     };
   }, [menu]);
@@ -76,12 +90,41 @@ export default function Workspace() {
     setMenu(false);
     setSearch("");
     document.querySelector(".pn-main")?.scrollTo(0, 0);
+    if (previousRoute.current !== location.pathname) {
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>("#pn-main-content")
+          ?.focus({ preventScroll: true }),
+      );
+      previousRoute.current = location.pathname;
+    }
   }, [location.pathname]);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 4200);
     return () => clearTimeout(timer);
   }, [toast]);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const updateKeyboard = () => {
+      const editing = document.activeElement?.matches(
+        'input, textarea, select, [contenteditable="true"]',
+      );
+      setKeyboardOpen(
+        Boolean(
+          editing && viewport && window.innerHeight - viewport.height > 120,
+        ),
+      );
+    };
+    viewport?.addEventListener("resize", updateKeyboard);
+    document.addEventListener("focusin", updateKeyboard);
+    document.addEventListener("focusout", updateKeyboard);
+    return () => {
+      viewport?.removeEventListener("resize", updateKeyboard);
+      document.removeEventListener("focusin", updateKeyboard);
+      document.removeEventListener("focusout", updateKeyboard);
+    };
+  }, []);
   // Ola 0: con sesión almacenada, revalidar identidad contra /auth/me una vez
   // al montar. Un 401 limpia la sesión y redirige a /login desde el cliente
   // API; un fallo transitorio (5xx/red) no invalida la sesión local.
@@ -95,15 +138,23 @@ export default function Workspace() {
     clearAllUserStorage();
     window.location.assign("/login");
   };
+  const section = location.pathname.split("/")[2] || "";
+  const activeSection =
+    section === "org-chart"
+      ? "team"
+      : section === "profile"
+        ? "account"
+        : section;
   const title =
-    nav.find((x) => x[0] && location.pathname.includes(x[0]))?.[2] ||
-    (location.pathname.includes("profile")
-      ? "Mi perfil"
-      : location.pathname.includes("notifications")
-        ? "Notificaciones"
-        : location.pathname.includes("assistant")
-          ? "Asistente Eva"
-          : "Resumen");
+    nav.find(([path]) => path === activeSection)?.[2] ||
+    ({
+      account: "Mi perfil",
+      notifications: "Notificaciones",
+      assistant: "Asistente Eva",
+    }[activeSection] ??
+      "Resumen");
+  const userName = displayName(readSession()?.user ?? null) || "Usuario";
+  const userInitials = initialsOf(userName) || "PN";
   if (location.pathname === "/") return <Redirect to="/login" />;
   if (location.pathname === "/login") return <Login />;
   // Guard de sesión (Ola 0): sin sesión autenticada no se pinta NADA privado;
@@ -112,7 +163,10 @@ export default function Workspace() {
   if (!location.pathname.startsWith("/dashboard"))
     return <Redirect to="/dashboard" />;
   return (
-    <div className="pn-app">
+    <div className={`pn-app ${keyboardOpen ? "keyboard-open" : ""}`}>
+      <a className="pn-skip-link" href="#pn-main-content">
+        Ir al contenido
+      </a>
       {menu && (
         <button
           className="pn-overlay"
@@ -121,6 +175,7 @@ export default function Workspace() {
         />
       )}
       <aside
+        id="pn-navigation"
         ref={menuRef}
         className={`pn-sidebar ${menu ? "is-open" : ""}`}
         role={menu ? "dialog" : undefined}
@@ -137,7 +192,7 @@ export default function Workspace() {
         <Brand />
         <button
           className="pn-workspace"
-          onClick={() => history.push("/dashboard/profile")}
+          onClick={() => history.push("/dashboard/account")}
         >
           <span className="workspace-icon">P</span>
           <span>
@@ -150,12 +205,8 @@ export default function Workspace() {
         <nav aria-label="Navegación principal">
           {nav.map(([path, icon, label]) => (
             <Link
-              aria-current={
-                location.pathname === "/dashboard" + (path ? "/" + path : "")
-                  ? "page"
-                  : undefined
-              }
-              className={title === label ? "active" : ""}
+              aria-current={activeSection === path ? "page" : undefined}
+              className={activeSection === path ? "active" : ""}
               key={path}
               to={"/dashboard" + (path ? "/" + path : "")}
             >
@@ -179,24 +230,19 @@ export default function Workspace() {
               Conoce a Eva <Icon name="arrow_outward" size={17} />
             </span>
           </Link>
-          <Link className="pn-settings" to="/dashboard/profile">
+          <Link className="pn-settings" to="/dashboard/account">
             <Icon name="settings" /> Mi perfil y preferencias
           </Link>
           <button
             className="pn-user"
-            onClick={() => history.push("/dashboard/profile")}
+            onClick={() => history.push("/dashboard/account")}
           >
-            <Avatar
-              name={(readSession()?.user?.username ?? profile.name ?? "Usuario")
-                .slice(0, 2)
-                .toUpperCase()}
-            />
+            <Avatar name={userInitials} />
             <span>
-              <strong>
-                {readSession()?.user?.username ?? profile.name ?? "Usuario"}
-              </strong>
+              <strong>{userName}</strong>
               <small>
-                {readSession()?.user?.email || "Sesión gestionada por el servidor"}
+                {readSession()?.user?.email ||
+                  "Sesión gestionada por el servidor"}
               </small>
             </span>
             <Icon name="chevron_right" size={17} />
@@ -212,6 +258,7 @@ export default function Workspace() {
             className="pn-icon-button mobile-menu"
             aria-label="Abrir menú"
             aria-expanded={menu}
+            aria-controls="pn-navigation"
             onClick={() => setMenu(!menu)}
           >
             <Icon name="menu" />
@@ -268,16 +315,26 @@ export default function Workspace() {
             <Icon name="notifications" />
             {seen.length < 3 && <i />}
           </Link>
-          <Link aria-label="Mi perfil" to="/dashboard/profile">
-            <Avatar />
+          <Link
+            className="pn-header-profile"
+            aria-label="Mi perfil"
+            to="/dashboard/account"
+          >
+            <Avatar name={userInitials} />
           </Link>
         </header>
         <motion.main
+          id="pn-main-content"
+          tabIndex={-1}
+          aria-label={title}
           className={`pn-content route-${location.pathname.split("/")[2] || "home"}`}
           key={location.pathname}
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
+          transition={{
+            duration: reduceMotion ? 0 : 0.22,
+            ease: [0.2, 0.8, 0.2, 1],
+          }}
         >
           <Switch>
             <Route exact path="/dashboard">
@@ -304,7 +361,7 @@ export default function Workspace() {
                 }}
               />
             </Route>
-            <Route path="/dashboard/org-chart">
+            <Route path={["/dashboard/team", "/dashboard/org-chart"]}>
               <Team />
             </Route>
             <Route exact path="/dashboard/evaluations">
@@ -322,7 +379,7 @@ export default function Workspace() {
             <Route path="/dashboard/notifications">
               <Notifications seen={seen} setSeen={setSeen} />
             </Route>
-            <Route path="/dashboard/profile">
+            <Route path={["/dashboard/account", "/dashboard/profile"]}>
               <Profile
                 profile={profile}
                 save={(p) => {
@@ -349,7 +406,12 @@ export default function Workspace() {
         </motion.main>
       </div>
       {toast && (
-        <div className="pn-toast" role="status">
+        <div
+          className="pn-toast"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <Icon name="check_circle" />
           {toast}
           <button aria-label="Cerrar aviso" onClick={() => setToast("")}>
@@ -389,7 +451,7 @@ export default function Workspace() {
                   transition={
                     reduceMotion
                       ? { duration: 0 }
-                      : { type: "spring", stiffness: 380, damping: 30 }
+                      : { duration: 0.22, ease: "easeOut" }
                   }
                 />
               )}
@@ -402,6 +464,7 @@ export default function Workspace() {
           onClick={() => setMenu(true)}
           aria-label="Más opciones"
           aria-expanded={menu}
+          aria-controls="pn-navigation"
           className={
             menu ||
             (location.pathname !== "/dashboard" &&

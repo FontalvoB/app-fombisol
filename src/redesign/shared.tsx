@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import peopleNetMark from "./assets/peoplenet-mark.png";
 
 export function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (
     <span
       aria-hidden="true"
-      className="material-symbols-outlined"
+      className="material-symbols-outlined pn-icon"
       style={{ fontSize: size }}
     >
       {name}
@@ -39,20 +40,26 @@ export function Avatar({
   name?: string;
   tone?: number;
 }) {
-  return <span className={`pn-avatar tone-${tone % 4}`}>{name}</span>;
+  return (
+    <span className={`pn-avatar tone-${tone % 4}`} aria-hidden="true">
+      {name}
+    </span>
+  );
 }
 
 export function Brand() {
   return (
-    <Link className="pn-brand" to="/dashboard">
-      <span className="pn-mark">
-        <i />
-        <i />
-        <i />
-      </span>
+    <Link className="pn-brand" to="/dashboard" aria-label="PeopleNet · Inicio">
+      <img
+        className="pn-brand-mark"
+        src={peopleNetMark}
+        alt=""
+        width={44}
+        height={44}
+      />
       <span>
         people<span className="brand-light">net</span>
-        <small>PERSONAS QUE NOS MUEVEN</small>
+        <small>GESTIÓN HUMANA</small>
       </span>
     </Link>
   );
@@ -94,7 +101,7 @@ export function Badge({ children }: { children: string }) {
   );
 }
 
-export function Heading({
+export function PageHero({
   eyebrow,
   title,
   description,
@@ -106,11 +113,33 @@ export function Heading({
   action?: ReactNode;
 }) {
   return (
-    <div className="pn-heading">
+    <header className="pn-heading pn-page-hero">
       <div>
         <div className="pn-eyebrow">{eyebrow}</div>
         <h1>{title}</h1>
         <p>{description}</p>
+      </div>
+      {action}
+    </header>
+  );
+}
+
+export const Heading = PageHero;
+
+export function SectionTitle({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="pn-section-heading">
+      <div>
+        <h2>{title}</h2>
+        {description && <p>{description}</p>}
       </div>
       {action}
     </div>
@@ -119,7 +148,7 @@ export function Heading({
 
 export function Empty() {
   return (
-    <div className="pn-empty">
+    <div className="pn-empty" role="status">
       <Icon name="search_off" size={36} />
       <h3>No encontramos resultados</h3>
       <p>Prueba con otra búsqueda o cambia los filtros.</p>
@@ -138,12 +167,10 @@ export function SectionError({
   onRetry: () => void;
 }) {
   return (
-    <div className="pn-empty">
+    <div className="pn-empty pn-section-error" role="alert">
       <Icon name={restricted ? "lock" : "cloud_off"} size={32} />
       <h3>
-        {restricted
-          ? "Sección restringida"
-          : "No pudimos cargar esta sección"}
+        {restricted ? "Sección restringida" : "No pudimos cargar esta sección"}
       </h3>
       <p>{error}</p>
       <Button secondary onClick={onRetry}>
@@ -156,9 +183,10 @@ export function SectionError({
 /** Nota de carga/estado accesible. */
 export function LoadingNote({ label }: { label: string }) {
   return (
-    <p className="pn-info" role="status">
-      {label}
-    </p>
+    <div className="pn-loading" role="status" aria-live="polite">
+      <span className="pn-loading-shape" aria-hidden="true" />
+      <span>{label}</span>
+    </div>
   );
 }
 

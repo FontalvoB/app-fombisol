@@ -2,7 +2,7 @@
 .editorial-library-feature {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #045c94;
+  background: var(--pn-blue);
   border-radius: 24px;
   overflow: hidden;
   margin-bottom: 24px;
@@ -66,7 +66,7 @@
   height: 38px;
   border-radius: 12px;
   background: #fff8e7;
-  color: #045c94;
+  color: var(--pn-blue);
   box-shadow: 0 3px 12px #21305312;
 }
 .editorial-doc-card .document-card-body {
@@ -111,7 +111,7 @@
   padding: 20px 24px;
 }
 .editorial-strategy h2 {
-  color: #213053;
+  color: var(--pn-navy);
   font-size: 21px;
   letter-spacing: -0.5px;
   margin: 8px 0;
@@ -126,7 +126,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #045c94;
+  color: var(--pn-blue);
   font-weight: 700;
   font-size: 12px;
   min-height: 40px;
@@ -177,9 +177,6 @@
   }
   .editorial-doc-card .document-card-body .pn-eyebrow {
     font-size: 9px;
-  }
-  .editorial-doc-card .document-card-body .pn-badge {
-    font-size: 10px;
   }
   .editorial-doc-card .document-card-body p {
     font-size: 11px;
@@ -264,7 +261,7 @@
   padding: 20px;
 }
 .human-eyebrow {
-  color: #045c94;
+  color: var(--pn-blue);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 1.3px;
@@ -274,7 +271,7 @@
   font-size: 23px;
   line-height: 1.2;
   letter-spacing: -0.6px;
-  color: #213053;
+  color: var(--pn-navy);
 }
 .human-evaluation-content p {
   margin: 0;
@@ -294,12 +291,6 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-}
-.human-evaluation-content .pn-button {
-  width: 100%;
-  justify-content: space-between;
-  min-height: 46px;
-  font-size: 12px;
 }
 .human-team-banner.vivid-team-banner {
   padding: 0;
@@ -371,7 +362,7 @@
   font-size: 25px;
   line-height: 1.2;
   letter-spacing: -0.6px;
-  color: #213053;
+  color: var(--pn-navy);
   margin: 10px 0;
 }
 .human-wellbeing-banner p {
@@ -385,7 +376,7 @@
   gap: 12px;
   min-height: 44px;
   font-size: 12px;
-  color: #045c94;
+  color: var(--pn-blue);
   font-weight: 800;
 }
 @media (min-width: 761px) {
@@ -417,10 +408,6 @@
   }
   .human-evaluation-meta {
     font-size: 11px;
-  }
-  .human-evaluation-content .pn-button {
-    min-height: 48px;
-    font-size: 13px;
   }
   .human-team-banner.vivid-team-banner {
     display: flex;

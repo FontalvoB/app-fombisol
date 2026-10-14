@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Icon,
   Badge,
-  Heading,
+  PageHero,
   Button,
   SectionError,
   LoadingNote,
@@ -139,7 +139,9 @@ export function Home() {
     unwrapApiResponse: true,
   });
   const confirmedIds = useApi<ConfirmedDocumentIds>(
-    userId != null ? `/document-confirmations/user/${userId}/document-ids` : null,
+    userId != null
+      ? `/document-confirmations/user/${userId}/document-ids`
+      : null,
     { unwrapApiResponse: true },
   );
   const pendingDocs = useMemo(() => {
@@ -179,7 +181,10 @@ export function Home() {
         <div>
           <span>{todayLabel()}</span>
           <h1>
-            Hola, {greeting} <span className="greeting-sun">✦</span>
+            Hola, {greeting}{" "}
+            <span className="greeting-sun" aria-hidden="true">
+              ✦
+            </span>
           </h1>
           <p>Hoy es un buen día para crecer.</p>
         </div>
@@ -193,7 +198,7 @@ export function Home() {
         </Link>
       </div>
       <div className="vivid-desktop-heading">
-        <Heading
+        <PageHero
           eyebrow={todayLabel()}
           title={`Hola, ${greeting}. Qué bueno tenerte aquí.`}
           description="Un nuevo día para conectar, avanzar y hacer que las cosas pasen."
@@ -226,9 +231,13 @@ export function Home() {
               </p>
             </div>
             {summaryRing ? (
-              <ProgressRing value={summaryRing.value} label={summaryRing.label} compact />
+              <ProgressRing
+                value={summaryRing.value}
+                label={summaryRing.label}
+                compact
+              />
             ) : analytics.state.status === "success" &&
-            analyticsData?.completionRate != null ? (
+              analyticsData?.completionRate != null ? (
               <ProgressRing
                 value={analyticsData.completionRate}
                 label={`indicadores evaluados · ${periodLabel(ringPeriod as MonthPeriod)}`}
@@ -241,9 +250,13 @@ export function Home() {
                 onRetry={indicators.reload}
               />
             ) : employeeId == null ? (
-              <LoadingNote label="Usuario sin colaborador asociado." />
+              <p className="pn-info" role="status">
+                Usuario sin colaborador asociado.
+              </p>
             ) : indicators.state.status === "success" && !periods.length ? (
-              <LoadingNote label="Aún no tienes indicadores asignados." />
+              <p className="pn-info" role="status">
+                Aún no tienes indicadores asignados.
+              </p>
             ) : (
               <LoadingNote label="Cargando tu avance…" />
             )}
@@ -254,7 +267,7 @@ export function Home() {
                 <Icon name="check_circle" size={16} /> {summaryRing.counts}
               </span>
             ) : analytics.state.status === "success" &&
-            analyticsData?.totalIndicators != null ? (
+              analyticsData?.totalIndicators != null ? (
               <span className="hero-growth">
                 <Icon name="check_circle" size={16} />{" "}
                 {analyticsData.completedIndicators ?? 0} de{" "}
@@ -455,10 +468,30 @@ export function Home() {
       </div>
       <div className="pn-quick-grid">
         {[
-          ["event_available", "Solicitar un permiso", "Gestiona tu tiempo", "requests/new"],
-          ["workspace_premium", "Obtener un certificado", "A un clic de distancia", "certificates"],
-          ["account_tree", "Conocer al equipo", "Conecta con las personas", "org-chart"],
-          ["auto_awesome", "Preguntarle a Eva", "Estamos para ayudarte", "assistant"],
+          [
+            "event_available",
+            "Solicitar un permiso",
+            "Gestiona tu tiempo",
+            "requests/new",
+          ],
+          [
+            "workspace_premium",
+            "Obtener un certificado",
+            "A un clic de distancia",
+            "certificates",
+          ],
+          [
+            "account_tree",
+            "Conocer al equipo",
+            "Conecta con las personas",
+            "org-chart",
+          ],
+          [
+            "auto_awesome",
+            "Preguntarle a Eva",
+            "Estamos para ayudarte",
+            "assistant",
+          ],
         ].map(([icon, title, desc, path]) => (
           <Link to={"/dashboard/" + path} className="pn-quick" key={path}>
             <span className="quick-icon">
@@ -499,28 +532,39 @@ export function Home() {
               <div className="metric-detail-comparison">
                 <div>
                   <span>Indicadores</span>
-                  <strong>{summary.state.data.totalIndicators ?? "Sin dato"}</strong>
+                  <strong>
+                    {summary.state.data.totalIndicators ?? "Sin dato"}
+                  </strong>
                 </div>
                 <div>
                   <span>Evaluados</span>
-                  <strong>{summary.state.data.completedIndicators ?? "Sin dato"}</strong>
+                  <strong>
+                    {summary.state.data.completedIndicators ?? "Sin dato"}
+                  </strong>
                 </div>
                 <div>
                   <span>Pendientes</span>
-                  <strong>{summary.state.data.pendingIndicators ?? "Sin dato"}</strong>
+                  <strong>
+                    {summary.state.data.pendingIndicators ?? "Sin dato"}
+                  </strong>
                 </div>
                 <div>
                   <span>Promedio final</span>
                   <strong>
                     {summary.state.data.averageFinalResult != null
-                      ? formatMeasure(summary.state.data.averageFinalResult, "%")
+                      ? formatMeasure(
+                          summary.state.data.averageFinalResult,
+                          "%",
+                        )
                       : "Sin dato"}
                   </strong>
                 </div>
               </div>
             </>
           ) : (
-            <LoadingNote label="Sin resumen disponible." />
+            <p className="pn-info" role="status">
+              Sin resumen disponible.
+            </p>
           )}
         </section>
         <section className="vivid-agenda">
@@ -601,13 +645,15 @@ export function Home() {
                   item.result != null &&
                   (item.measurementUnit ?? "%") === "%" ? (
                     <div className="pn-progress">
-                      <i style={{ width: `${Math.max(0, Math.min(100, item.result))}%` }} />
+                      <i
+                        style={{
+                          width: `${Math.max(0, Math.min(100, item.result))}%`,
+                        }}
+                      />
                     </div>
                   ) : null}
                 </div>
-                <span>
-                  {formatMeasure(item.result, item.measurementUnit)}
-                </span>
+                <span>{formatMeasure(item.result, item.measurementUnit)}</span>
                 <Badge>{item.completed ? "Evaluado" : "Pendiente"}</Badge>
               </Link>
             ))

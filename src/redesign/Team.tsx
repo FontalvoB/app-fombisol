@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Icon,
   Badge,
-  Heading,
+  PageHero,
   Empty,
   Search,
   Modal,
@@ -116,7 +116,13 @@ export function Team() {
     ) => {
       setBranches((prev) => ({
         ...prev,
-        [key]: { ...EMPTY_BRANCH, ...(prev[key] ?? {}), loading: true, error: null, expanded: true },
+        [key]: {
+          ...EMPTY_BRANCH,
+          ...(prev[key] ?? {}),
+          loading: true,
+          error: null,
+          expanded: true,
+        },
       }));
       try {
         const data = await loader(0);
@@ -127,7 +133,8 @@ export function Team() {
             areas: data.areas ?? prev[key]?.areas,
             subareas: data.subareas ?? prev[key]?.subareas,
             employees: data.content ?? prev[key]?.employees,
-            totalEmployees: data.totalElements ?? prev[key]?.totalEmployees ?? null,
+            totalEmployees:
+              data.totalElements ?? prev[key]?.totalEmployees ?? null,
             nextPage: 1,
             loading: false,
             error: null,
@@ -184,7 +191,8 @@ export function Team() {
             [key]: {
               ...(prev[key] ?? EMPTY_BRANCH),
               employees: merged,
-              totalElements: data.totalElements ?? prev[key]?.totalEmployees ?? null,
+              totalElements:
+                data.totalElements ?? prev[key]?.totalEmployees ?? null,
               nextPage: page + 1,
               loading: false,
               error: null,
@@ -236,17 +244,16 @@ export function Team() {
     return gerencias.reduce((acc, g) => {
       return (
         acc +
-        (g.areas ?? []).reduce((accArea, a) => accArea + (a.totalPeopleCount ?? 0), 0)
+        (g.areas ?? []).reduce(
+          (accArea, a) => accArea + (a.totalPeopleCount ?? 0),
+          0,
+        )
       );
     }, 0);
   }, [gerencias]);
 
   /** Tarjeta de persona reutilizable. */
-  function personCard(
-    person: OrgPersonNode,
-    tone: number,
-    context = "",
-  ) {
+  function personCard(person: OrgPersonNode, tone: number, context = "") {
     return (
       <button
         className="pn-person-card"
@@ -329,7 +336,7 @@ export function Team() {
                     )
                   }
                 >
-                  Cargar más ({(branch.employees?.length ?? 0)}/
+                  Cargar más ({branch.employees?.length ?? 0}/
                   {branch.totalEmployees})
                 </button>
               )}
@@ -385,7 +392,9 @@ export function Team() {
               </p>
             ) : null}
             <div className="pn-people-grid">
-              {(branch.employees ?? []).map((p, i) => personCard(p, i, subContext))}
+              {(branch.employees ?? []).map((p, i) =>
+                personCard(p, i, subContext),
+              )}
             </div>
             {branch.totalEmployees != null &&
               (branch.employees?.length ?? 0) < branch.totalEmployees && (
@@ -400,7 +409,7 @@ export function Team() {
                     )
                   }
                 >
-                  Cargar más ({(branch.employees?.length ?? 0)}/
+                  Cargar más ({branch.employees?.length ?? 0}/
                   {branch.totalEmployees})
                 </button>
               )}
@@ -437,7 +446,10 @@ export function Team() {
             <h3>{g.name ?? "Sin nombre"}</h3>
           </div>
         </div>
-        {renderHeads(g.heads, `Jefatura de gerencia: ${g.name ?? "Sin nombre"}`)}
+        {renderHeads(
+          g.heads,
+          `Jefatura de gerencia: ${g.name ?? "Sin nombre"}`,
+        )}
         {(g.areas?.length ?? 0) > 0 ? (
           <div className="org-subarea-group">
             {(g.areas ?? []).map((a) => renderArea(a))}
@@ -465,7 +477,8 @@ export function Team() {
               )
             }
           >
-            Expandir áreas ({g.areasCount}) <Icon name="unfold_more" size={16} />
+            Expandir áreas ({g.areasCount}){" "}
+            <Icon name="unfold_more" size={16} />
           </button>
         ) : null}
       </div>
@@ -474,7 +487,7 @@ export function Team() {
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="EL EQUIPO DETRÁS DE CADA LOGRO"
         title="Las personas que nos mueven"
         description="Conoce cómo nos conectamos y encuentra a tu próximo aliado."
@@ -508,7 +521,7 @@ export function Team() {
                     ? `${totalPeople} personas en tu alcance`
                     : "Organigrama sin personas todavía"}
                   <br />
-                  <strong>Datos del servidor.</strong>
+                  <strong>Tu equipo de trabajo.</strong>
                 </span>
               </div>
             </div>
@@ -581,10 +594,7 @@ export function Team() {
       {selectedPerson && (
         <Modal title="Perfil del equipo" close={() => setSelectedPerson(null)}>
           <div className="person-detail">
-            <Avatarish
-              initials={initials(selectedPerson.fullName)}
-              tone={1}
-            />
+            <Avatarish initials={initials(selectedPerson.fullName)} tone={1} />
             <h2>{selectedPerson.fullName ?? "Sin nombre"}</h2>
             <p>{selectedPerson.position ?? "Sin cargo"}</p>
             <Badge>{selectedPersonContext || "Ubicación sin dato"}</Badge>
@@ -603,5 +613,7 @@ export function Team() {
 
 /** Avatar con iniciales (sin nombres demo). */
 function Avatarish({ initials, tone }: { initials: string; tone: number }) {
-  return <span className={`pn-avatar tone-${tone % 4}`}>{initials || "PN"}</span>;
+  return (
+    <span className={`pn-avatar tone-${tone % 4}`}>{initials || "PN"}</span>
+  );
 }

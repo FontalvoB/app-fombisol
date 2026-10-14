@@ -10,7 +10,7 @@ import {
   Icon,
   Badge,
   Button,
-  Heading,
+  PageHero,
   Empty,
   Search,
   Tabs,
@@ -67,13 +67,19 @@ const TIPO_OPTIONS: ReadonlyArray<{
   { value: "PERMISO", label: "Permiso", icon: "event_available" },
   { value: "LICENCIA", label: "Licencia", icon: "family_restroom" },
   { value: "VACACIONES", label: "Vacaciones", icon: "beach_access" },
-  { value: "CITACION_MEDICA", label: "Citación médica", icon: "medical_services" },
+  {
+    value: "CITACION_MEDICA",
+    label: "Citación médica",
+    icon: "medical_services",
+  },
   { value: "INCAPACIDAD", label: "Incapacidad", icon: "health_and_safety" },
   { value: "OTRO", label: "Otro", icon: "more_horiz" },
 ];
 
 function tipoLabel(tipo: string | null): string {
-  return TIPO_OPTIONS.find((t) => t.value === tipo)?.label ?? tipo ?? "Sin dato";
+  return (
+    TIPO_OPTIONS.find((t) => t.value === tipo)?.label ?? tipo ?? "Sin dato"
+  );
 }
 
 function tipoIcon(tipo: string | null): string {
@@ -201,11 +207,12 @@ export function Requests() {
   const totalElements = mias.state.data?.totalElements ?? null;
   const totalPages = mias.state.data?.totalPages ?? null;
   const pageNumber = mias.state.data?.number ?? page;
-  const isInitialLoading = mias.state.status === "loading" && mias.state.data == null;
+  const isInitialLoading =
+    mias.state.status === "loading" && mias.state.data == null;
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="TU TIEMPO TAMBIÉN IMPORTA"
         title="Permisos y solicitudes"
         description="Organiza tus ausencias y sigue cada solicitud, sin complicaciones."
@@ -226,8 +233,8 @@ export function Requests() {
           <span className="human-eyebrow">TIEMPO PARA TI</span>
           <h3>Un descanso también es avanzar.</h3>
           <p>
-            Organiza permisos y vacaciones desde una solicitud y sigue el
-            estado real de cada trámite.
+            Organiza permisos y vacaciones desde una solicitud y sigue el estado
+            real de cada trámite.
           </p>
           <Link className="human-rest-link" to="/dashboard/requests/new">
             Planea tu descanso <Icon name="arrow_forward" size={17} />
@@ -236,7 +243,11 @@ export function Requests() {
       </div>
       <section className="pn-panel">
         <div className="pn-toolbar padded">
-          <Tabs items={[...TAB_ITEMS]} value={tab} set={(v) => setTab(v as Tab)} />
+          <Tabs
+            items={[...TAB_ITEMS]}
+            value={tab}
+            set={(v) => setTab(v as Tab)}
+          />
           <Search
             value={query}
             onChange={setQuery}
@@ -346,9 +357,9 @@ export function Requests() {
                 </button>
               ))}
             </div>
-            {rows.length === 0 && totalElements != null && totalElements > 0 && (
-              <Empty />
-            )}
+            {rows.length === 0 &&
+              totalElements != null &&
+              totalElements > 0 && <Empty />}
             {(totalPages ?? 0) > 1 && (
               <div className="table-footer">
                 <button
@@ -385,7 +396,10 @@ export function Requests() {
       </section>
 
       {selectedId != null && (
-        <Modal title="Detalle de la solicitud" close={() => setSelectedId(null)}>
+        <Modal
+          title="Detalle de la solicitud"
+          close={() => setSelectedId(null)}
+        >
           {detail.state.status === "loading" ? (
             <LoadingNote label="Cargando detalle…" />
           ) : detail.state.status === "error" ? (
@@ -397,7 +411,9 @@ export function Requests() {
           ) : detail.state.data ? (
             <SolicitudDetail solicitud={detail.state.data} />
           ) : (
-            <LoadingNote label="Sin detalle disponible." />
+            <p className="pn-info" role="status">
+              Sin detalle disponible.
+            </p>
           )}
         </Modal>
       )}
@@ -406,7 +422,11 @@ export function Requests() {
 }
 
 /** Cuerpo del modal de detalle: datos, adjuntos e historial reales. */
-function SolicitudDetail({ solicitud }: { solicitud: SolicitudNovedadResponse }) {
+function SolicitudDetail({
+  solicitud,
+}: {
+  solicitud: SolicitudNovedadResponse;
+}) {
   return (
     <>
       <Badge>
@@ -425,7 +445,9 @@ function SolicitudDetail({ solicitud }: { solicitud: SolicitudNovedadResponse })
         {solicitud.tipo === "OTRO" && solicitud.otraNovedad && (
           <dt>Otra novedad</dt>
         )}
-        {solicitud.tipo === "OTRO" && <dd>{solicitud.otraNovedad ?? "Sin dato"}</dd>}
+        {solicitud.tipo === "OTRO" && (
+          <dd>{solicitud.otraNovedad ?? "Sin dato"}</dd>
+        )}
         <dt>Periodo</dt>
         <dd>
           {fechaLarga(solicitud.fechaDesde)}
@@ -437,7 +459,8 @@ function SolicitudDetail({ solicitud }: { solicitud: SolicitudNovedadResponse })
           <>
             <dt>Horas</dt>
             <dd>
-              {timeLabel(solicitud.horaSalida)} — {timeLabel(solicitud.horaRegreso)}
+              {timeLabel(solicitud.horaSalida)} —{" "}
+              {timeLabel(solicitud.horaRegreso)}
             </dd>
           </>
         )}
@@ -470,7 +493,9 @@ function SolicitudDetail({ solicitud }: { solicitud: SolicitudNovedadResponse })
         <dt>Radicada</dt>
         <dd>
           {detalleMomento(solicitud.fechaCreacion)}
-          {solicitud.creadoPorUsername ? ` · ${solicitud.creadoPorUsername}` : ""}
+          {solicitud.creadoPorUsername
+            ? ` · ${solicitud.creadoPorUsername}`
+            : ""}
         </dd>
       </dl>
       {(solicitud.documentos?.length ?? 0) > 0 && (
@@ -585,7 +610,9 @@ export function RequestForm() {
     const suggestionId = sugerido.state.data?.id;
     if (suggestionId != null) {
       setForm((prev) =>
-        prev.aprobadorId ? prev : { ...prev, aprobadorId: String(suggestionId) },
+        prev.aprobadorId
+          ? prev
+          : { ...prev, aprobadorId: String(suggestionId) },
       );
     }
   }, [sugerido.state.data, touchedAprobador]);
@@ -721,7 +748,7 @@ export function RequestForm() {
       <Link className="pn-back" to="/dashboard/requests">
         <Icon name="arrow_back" size={17} /> Volver a mis solicitudes
       </Link>
-      <Heading
+      <PageHero
         eyebrow="UN ESPACIO PARA LO QUE NECESITAS"
         title="Crea una nueva solicitud"
         description="Cuéntanos qué necesitas. Nosotros te ayudamos con el siguiente paso."

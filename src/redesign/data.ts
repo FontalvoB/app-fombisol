@@ -3,7 +3,7 @@ export const nav = [
   ["kpis", "monitoring", "Mis indicadores"],
   ["requests", "event_available", "Permisos y solicitudes"],
   ["documents", "folder_open", "Documentos"],
-  ["org-chart", "account_tree", "Nuestro equipo"],
+  ["team", "account_tree", "Nuestro equipo"],
   ["evaluations", "target", "Evaluaciones"],
   ["certificates", "workspace_premium", "Certificados"],
 ];

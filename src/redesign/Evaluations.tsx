@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import {
   Icon,
   Badge,
-  Heading,
+  PageHero,
+  SectionTitle,
   Button,
   Modal,
   SectionError,
@@ -53,7 +54,8 @@ import {
 /** Períodos activos (contrato M2 reutilizado). */
 function useActivePeriod() {
   const periods = useApi<EvalPeriod[]>("/evaluations/periods");
-  const activePeriod = periods.state.data?.find((p) => p.isActive === true) ?? null;
+  const activePeriod =
+    periods.state.data?.find((p) => p.isActive === true) ?? null;
   return { periods, activePeriod };
 }
 
@@ -76,7 +78,7 @@ export function Evaluations() {
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="CRECER EMPIEZA POR CONOCERTE"
         title="Tu desarrollo, en primer plano."
         description="Haz una pausa, reconoce tus logros y descubre nuevas oportunidades."
@@ -165,9 +167,7 @@ export function Evaluations() {
         </div>
       ) : null}
 
-      <div className="pn-section-heading">
-        <h2>Tu ruta de desarrollo</h2>
-      </div>
+      <SectionTitle title="Tu ruta de desarrollo" />
       <div className="pn-three-grid">
         <section className="pn-panel development-card">
           <span className="development-number">01</span>
@@ -225,7 +225,8 @@ function AutoResultPanel({ auto }: { auto: EvaluationResponse }) {
           · Cada reflexión es un avance.
         </h3>
         <p className="small-muted">
-          Registrada el {auto.createdAt ? auto.createdAt.split("T")[0] : "sin fecha"} ·
+          Registrada el{" "}
+          {auto.createdAt ? auto.createdAt.split("T")[0] : "sin fecha"} ·
           Estado: {auto.status ?? "sin dato"}
         </p>
         {auto.finalScore != null && (
@@ -250,7 +251,11 @@ function AutoResultPanel({ auto }: { auto: EvaluationResponse }) {
           <Badge>{detail.status ?? "Sin dato"}</Badge>
           <dl className="pn-details">
             <dt>Puntaje global</dt>
-            <dd>{detail.globalScore != null ? `${detail.globalScore}/100` : "Sin dato"}</dd>
+            <dd>
+              {detail.globalScore != null
+                ? `${detail.globalScore}/100`
+                : "Sin dato"}
+            </dd>
             {detail.finalScore != null && (
               <>
                 <dt>Calibración</dt>
@@ -269,8 +274,8 @@ function AutoResultPanel({ auto }: { auto: EvaluationResponse }) {
             const avg = values.reduce((a, b) => a + b, 0) / values.length;
             return (
               <div className="pn-info" key={bloque.id}>
-                <strong>{bloque.nombre}</strong> ·{" "}
-                {values.length} criterios · promedio{" "}
+                <strong>{bloque.nombre}</strong> · {values.length} criterios ·
+                promedio{" "}
                 {avg.toLocaleString("es-CO", { maximumFractionDigits: 1 })} / 4
                 <div className="evaluation-scores">
                   {values.map((v, i) => (
@@ -375,7 +380,9 @@ function EvaChat() {
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState<EvaluationResponse | null>(null);
   const [saveError, setSaveError] = useState("");
-  const [alreadyDone, setAlreadyDone] = useState<EvaluationResponse | null>(null);
+  const [alreadyDone, setAlreadyDone] = useState<EvaluationResponse | null>(
+    null,
+  );
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -578,16 +585,18 @@ function EvaChat() {
     );
   }
 
-  const currentBloque = step.kind === "criterio" || step.kind === "comentario"
-    ? M7_BLOQUES[step.bloqueIdx]
-    : null;
-  const currentCriterio = step.kind === "criterio"
-    ? currentBloque?.criterios[step.criterioIdx]
-    : null;
+  const currentBloque =
+    step.kind === "criterio" || step.kind === "comentario"
+      ? M7_BLOQUES[step.bloqueIdx]
+      : null;
+  const currentCriterio =
+    step.kind === "criterio"
+      ? currentBloque?.criterios[step.criterioIdx]
+      : null;
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="UN MOMENTO PARA REFLEXIONAR"
         title="Tu autoevaluación con Eva"
         description="Criterios reales del ciclo de desempeño; tus respuestas se guardan en el servidor."
@@ -645,10 +654,7 @@ function EvaChat() {
               <Icon name="send" size={18} />
             </Button>
           ) : (
-            <form
-              className="chat-input"
-              onSubmit={sendText}
-            >
+            <form className="chat-input" onSubmit={sendText}>
               <input
                 aria-label="Mensaje para Eva"
                 value={input}
@@ -683,7 +689,10 @@ function EvaChat() {
           {currentCriterio ? (
             <div className="pn-info">
               <strong>
-                {M7_BLOQUES[step.kind === "criterio" ? step.bloqueIdx : 0].nombre}
+                {
+                  M7_BLOQUES[step.kind === "criterio" ? step.bloqueIdx : 0]
+                    .nombre
+                }
               </strong>
               <p>{currentCriterio.texto}</p>
               {[1, 2, 3, 4].map((n) => (
@@ -694,7 +703,11 @@ function EvaChat() {
             </div>
           ) : null}
           <div className="pn-progress">
-            <i style={{ width: `${Math.round((stepIndex / totalSteps) * 100)}%` }} />
+            <i
+              style={{
+                width: `${Math.round((stepIndex / totalSteps) * 100)}%`,
+              }}
+            />
           </div>
           <p className="small-muted">
             Paso {Math.min(stepIndex + 1, totalSteps)} de {totalSteps} ·{" "}
@@ -710,7 +723,7 @@ function EvaChat() {
 function BlockedEva({ title, message }: { title: string; message: string }) {
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="UN MOMENTO PARA REFLEXIONAR"
         title={title}
         description="Eva te acompaña cuando el ciclo esté disponible."
@@ -751,12 +764,10 @@ function NanabotChat() {
     const message = text.trim();
     if (!message || busy) return;
     if (!canUse) return; // colaborador ordinario NO envía la petición
-    const history = messages
-      .slice(-6)
-      .map((m) => ({
-        role: m.role === "eva" ? "assistant" : "user",
-        text: m.text,
-      }));
+    const history = messages.slice(-6).map((m) => ({
+      role: m.role === "eva" ? "assistant" : "user",
+      text: m.text,
+    }));
     setMessages((prev) => [...prev, { role: "user", text: message }]);
     setInput("");
     setBusy(true);
@@ -802,7 +813,7 @@ function NanabotChat() {
   if (!canUse) {
     return (
       <>
-        <Heading
+        <PageHero
           eyebrow="UN POCO DE AYUDA, MUCHAS POSIBILIDADES"
           title="Hola, soy Eva."
           description="El asistente de consulta está reservado a perfiles de administración por ahora."
@@ -825,7 +836,7 @@ function NanabotChat() {
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="UN POCO DE AYUDA, MUCHAS POSIBILIDADES"
         title="Hola, soy Nanabot."
         description="Asistente de consulta con las herramientas de la plataforma."
@@ -871,7 +882,10 @@ function NanabotChat() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Escribe tu pregunta de consulta…"
             />
-            <button disabled={!input.trim() || busy} aria-label="Enviar mensaje">
+            <button
+              disabled={!input.trim() || busy}
+              aria-label="Enviar mensaje"
+            >
               <Icon name="arrow_upward" />
             </button>
           </form>

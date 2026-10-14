@@ -31,7 +31,7 @@ import {
   Avatar,
   Button,
   Badge,
-  Heading,
+  PageHero,
   LoadingNote,
   SectionError,
   date,
@@ -96,9 +96,7 @@ function activityIcon(type: string | null): string {
 }
 
 /** status REAL del empleado ("inactive", "active", …) → etiqueta legible. */
-function employeeStatusLabel(
-  status: string | null | undefined,
-): string {
+function employeeStatusLabel(status: string | null | undefined): string {
   if (!status) return "Sin dato";
   const map: Record<string, string> = {
     active: "Activo",
@@ -106,7 +104,10 @@ function employeeStatusLabel(
     suspended: "Suspendido",
     terminated: "Retirado",
   };
-  return map[status.toLowerCase()] ?? status.charAt(0).toUpperCase() + status.slice(1);
+  return (
+    map[status.toLowerCase()] ??
+    status.charAt(0).toUpperCase() + status.slice(1)
+  );
 }
 
 /** Icono del chip según el tipo real del certificado; desconocidos → genérico. */
@@ -170,7 +171,7 @@ export function Certificates(_props: { name?: string }) {
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="LO QUE NECESITAS, A TU ALCANCE"
         title="Tus certificados, sin vueltas."
         description="Constancias reales expedidas por la empresa, listas para descargar."
@@ -185,7 +186,9 @@ export function Certificates(_props: { name?: string }) {
       />
       {/* FIX-1 B (admin sin employeeId): estado explícito en vez de área vacía. */}
       {employeeId == null ? (
-        <LoadingNote label="Los certificados requieren un colaborador asociado a tu usuario." />
+        <p className="pn-info" role="status">
+          Los certificados requieren un colaborador asociado a tu usuario.
+        </p>
       ) : (
         <>
           {certificates.state.status === "loading" &&
@@ -202,7 +205,11 @@ export function Certificates(_props: { name?: string }) {
             )}
           {certificates.state.status === "error" &&
             certificates.state.data != null && (
-              <div className="pn-info" role="alert" style={{ color: "#b3261e" }}>
+              <div
+                className="pn-info"
+                role="alert"
+                style={{ color: "var(--pn-danger)" }}
+              >
                 <Icon name="cloud_off" size={16} /> No se pudo actualizar la
                 lista: {certificates.state.error}{" "}
                 <Button secondary onClick={retry}>
@@ -272,7 +279,8 @@ export function Certificates(_props: { name?: string }) {
                     secondary
                     disabled={
                       cert.id == null ||
-                      (downloadStatus === "loading" && downloadingId === cert.id)
+                      (downloadStatus === "loading" &&
+                        downloadingId === cert.id)
                     }
                     onClick={() => void handleDownload(cert)}
                   >
@@ -287,7 +295,11 @@ export function Certificates(_props: { name?: string }) {
           </div>
         )}
       {downloadStatus === "error" && downloadError && (
-        <div className="pn-info" role="alert" style={{ color: "#b3261e" }}>
+        <div
+          className="pn-info"
+          role="alert"
+          style={{ color: "var(--pn-danger)" }}
+        >
           <Icon name="cloud_off" size={16} /> {downloadError}{" "}
           <Button secondary onClick={retry}>
             Reintentar
@@ -311,7 +323,7 @@ export function Notifications(_props: {
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="NO TE PIERDAS LO IMPORTANTE"
         title="Lo nuevo en tu espacio"
         description="Actividad reciente del espacio de trabajo, en tiempo real."
@@ -329,10 +341,9 @@ export function Notifications(_props: {
         <Icon name="info" size={18} /> Este feed es informativo: el servidor no
         registra lecturas por evento, así que no hay marcadores de "no leído".
       </div>
-      {activities.state.status === "loading" &&
-        !activities.state.data && (
-          <LoadingNote label="Cargando actividad…" />
-        )}
+      {activities.state.status === "loading" && !activities.state.data && (
+        <LoadingNote label="Cargando actividad…" />
+      )}
       {activities.state.status === "error" && !activities.state.data && (
         <SectionError
           error={activities.state.error ?? "Error inesperado."}
@@ -340,16 +351,19 @@ export function Notifications(_props: {
           onRetry={activities.reload}
         />
       )}
-      {activities.state.status === "error" &&
-        activities.state.data != null && (
-          <div className="pn-info" role="alert" style={{ color: "#b3261e" }}>
-            <Icon name="cloud_off" size={16} /> No se pudo actualizar el feed:{" "}
-            {activities.state.error}{" "}
-            <Button secondary onClick={activities.reload}>
-              Reintentar
-            </Button>
-          </div>
-        )}
+      {activities.state.status === "error" && activities.state.data != null && (
+        <div
+          className="pn-info"
+          role="alert"
+          style={{ color: "var(--pn-danger)" }}
+        >
+          <Icon name="cloud_off" size={16} /> No se pudo actualizar el feed:{" "}
+          {activities.state.error}{" "}
+          <Button secondary onClick={activities.reload}>
+            Reintentar
+          </Button>
+        </div>
+      )}
       {activities.state.status === "success" && (
         <section className="pn-panel notification-list">
           {feed.map((n, i) => (
@@ -358,9 +372,7 @@ export function Notifications(_props: {
                 <Icon name={activityIcon(n.type)} />
               </span>
               <div>
-                <span className="small-muted">
-                  {wireDateTime(n.timestamp)}
-                </span>
+                <span className="small-muted">{wireDateTime(n.timestamp)}</span>
                 <h2>{n.title ?? "Sin título"}</h2>
                 <p>{n.description ?? "Sin detalle."}</p>
               </div>
@@ -432,14 +444,13 @@ export function Profile(_props: {
 
   const person = summary.state.data;
   const user = identity.state.data;
-  const fullName =
-    person?.fullName ?? displayName(user) ?? "Sin dato";
+  const fullName = person?.fullName ?? displayName(user) ?? "Sin dato";
   const email = user?.email ?? "Sin dato";
   const username = user?.username ?? "Sin dato";
 
   return (
     <>
-      <Heading
+      <PageHero
         eyebrow="ESTE ESPACIO ES TUYO"
         title="Tu perfil"
         description="Tu información organizacional y tu descripción personal."
@@ -459,7 +470,7 @@ export function Profile(_props: {
           error={
             employeeId == null
               ? "Tu usuario no tiene un colaborador asociado."
-              : summary.state.error ?? "Error inesperado."
+              : (summary.state.error ?? "Error inesperado.")
           }
           restricted={summary.state.errorStatus === 403}
           onRetry={summary.reload}
@@ -499,8 +510,8 @@ export function Profile(_props: {
         <div className="pn-panel pn-form">
           <h2>Información personal</h2>
           <p className="small-muted">
-            Datos de identidad del servidor (solo lectura: aún no existe
-            contrato de edición personal para estos campos).
+            Consulta tus datos personales. Para actualizarlos, contacta a
+            Gestión Humana.
           </p>
           <label>
             Nombre completo
@@ -518,13 +529,11 @@ export function Profile(_props: {
           </div>
           <hr />
           <h3>Acerca de mí</h3>
-          <p className="small-muted">
-            Tu descripción personal se guarda en el servidor (tu colaborador).
-          </p>
+          <p className="small-muted">Cuéntale a tu equipo un poco sobre ti.</p>
           {employeeId == null ? (
             <div className="pn-info" role="note">
-              Tu usuario no tiene un colaborador asociado: no se puede editar
-              la descripción.
+              Tu usuario no tiene un colaborador asociado: no se puede editar la
+              descripción.
             </div>
           ) : (
             <>
@@ -545,10 +554,10 @@ export function Profile(_props: {
               <div className="form-actions">
                 <span className="small-muted">
                   {aboutStatus === "done"
-                    ? "Guardado en el servidor."
+                    ? "Tu descripción está guardada."
                     : aboutStatus === "error"
                       ? "Pendiente: revisa el mensaje e inténtalo de nuevo."
-                      : "Se guarda con PUT /employees/about-me."}
+                      : "Esta descripción se mostrará en tu perfil."}
                 </span>
                 <Button
                   type="button"
