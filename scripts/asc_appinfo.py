@@ -96,13 +96,19 @@ else:
 
 st, patched = call(f"{BASE}/appInfoLocalizations/{loc_id}", "PATCH",
                    {"data": {"type": "appInfoLocalizations", "id": loc_id,
-                             "attributes": {"copyright": "2026 Fombisol"}}})
-print(("✓ copyright →PATCH" if st == 200 else f"✗ copyright PATCH {st}: {json.dumps(patched)[:200]}"))
+                             "attributes": {"name": "PeopleNet"}}})
+print(("✓ localize es-MX nombre confirmado" if st == 200 else f"• localize PATCH {st}: {json.dumps(patched)[:200]}"))
 
-# 2. Categoría Business (iOS)
-st, cats = call(f"{BASE}/appCategories?limit=200&filter[platforms]=IOS")
-if st != 200: die(f"appCategories: {st}")
-bcat = next((c for c in cats["data"] if c["attributes"].get("name") == "Business"), None)
+# 2. Categoría Business (iOS) — sin filtro de plataforma, paginando hasta hallarla
+bcat = None
+url_next = f"{BASE}/appCategories?limit=200"
+while url_next and not bcat:
+    st, cats = call(url_next)
+    if st != 200: die(f"appCategories: {st} {json.dumps(cats)[:200]}")
+    for c in cats.get("data", []):
+        if c["attributes"].get("name") == "Business":
+            bcat = c; break
+    url_next = cats.get("links", {}).get("next")
 if not bcat: die("Categoría Business no encontrada")
 print(f"✓ categoría Business: {bcat['id']}")
 
@@ -122,8 +128,9 @@ ver_str = v["attributes"].get("versionString")
 print(f"• versión descartable {ver_str}: {vid} estado={v['attributes'].get('appStoreState')}")
 st, pv = call(f"{BASE}/appStoreVersions/{vid}", "PATCH", {
     "data": {"type": "appStoreVersions", "id": vid,
-             "attributes": {"contentRightsDeclaration": "DOES_NOT_USE_THIRD_PARTY_CONTENT"}}})
-print(("✓ contentRightsDeclaration →PATCH" if st == 200 else f"✗ contentRights PATCH {st}: {json.dumps(pv)[:250]}"))
+             "attributes": {"contentRightsDeclaration": "DOES_NOT_USE_THIRD_PARTY_CONTENT",
+                            "copyright": "2026 Fombisol"}}})
+print(("✓ contentRightsDeclaration + copyright (version) →PATCH" if st == 200 else f"✗ version PATCH {st}: {json.dumps(pv)[:250]}"))
 
 # 4. Diagnóstico de errores pendientes de la versión (por estado y relacións)
 st, vrel = call(f"{BASE}/appStoreVersions/{vid}?include=build,appStoreVersionLocalizations&fields[builds]=version,processingState")
