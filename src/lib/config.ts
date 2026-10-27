@@ -10,11 +10,12 @@
  *   - development  → `npm run dev` / `npm run build` (web + proxy Vite).
  *   - testflight   → `npm run build:testflight` (nativo iOS → TestFlight, backend DEV).
  *   - production   → `npm run build:production` (nativo iOS → App Store, backend PROD).
+ *   - pwa          → `npm run build:pwa` (PWA instalable en CloudFront, /api same-origin).
  */
 
 import { Capacitor } from "@capacitor/core";
 
-export type AppEnv = "development" | "testflight" | "production";
+export type AppEnv = "development" | "testflight" | "production" | "pwa";
 
 /** Modo de build actual (derivado del modo de Vite o default). */
 export const APP_ENV: AppEnv = (

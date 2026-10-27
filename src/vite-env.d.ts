@@ -2,7 +2,7 @@
 
 /** Variables de entorno disponibles en la app (definidas en .env.[mode] o inyectadas por CI). */
 interface ImportMetaEnv {
-  /** Modo de la app: development | testflight | production. */
+  /** Modo de la app: development | testflight | production | pwa. */
   readonly VITE_APP_ENV?: string;
   /** Base de la API: '/api' en web dev (proxy) o URL absoluta en builds nativos. */
   readonly VITE_API_BASE_URL?: string;

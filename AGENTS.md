@@ -1,14 +1,31 @@
 # AGENTS.md — app-fombisol (PeopleNet móvil)
 
-Ionic React + Capacitor sobre Vite (React 18, TypeScript, Tailwind 4). Dev server en 5173 con proxy `/api` → kpis-ms `:8080` (vite.config.ts). Compila a Android/iOS con Capacitor (`android/`, `ios/`).
+Ionic React sobre Vite (React 18, TypeScript, Tailwind 4). **Canal principal: PWA
+instalable** (manifest + Workbox vía `vite-plugin-pwa`, build `npm run build:pwa`).
+Capacitor (`android/`, `ios/`) queda como contenedor legacy — las tiendas ya no se
+publican (decisión 2026-10-27). Despliegue web en el Windows Server de
+peoplenet.info (IIS, same-origin `/api` → `:8080`): `docs/PWA-DESPLIEGUE-WINDOWS-SERVER.md`.
+Dev server en 5173 con proxy `/api` → kpis-ms `:8080` (vite.config.ts).
 
 ## Commands
 
 ```bash
 npm install
-npm run dev         # vite → http://localhost:5173
-npm run build       # tsc && vite build
+npm run dev          # vite → http://localhost:5173
+npm run build        # tsc && vite build (mode development)
+npm run build:pwa    # PWA instalable → dist/ con sw.js + manifest.webmanifest
+npm run preview      # sirve dist/ en :4173 (verificar SW + manifest)
+
+node scripts/generate-pwa-icons.mjs   # regenerar public/icons/ si cambia la marca
+
+# Release al Windows Server (dist/ ya copiado al server):
+powershell -ExecutionPolicy Bypass -File scripts\deploy-pwa-server.ps1
 ```
+
+- Modos de build: `development` (proxy Vite) · `testflight`/`production` (nativo
+  legacy, URL absoluta) · `pwa` (web, `/api` same-origin vía IIS).
+- El SW precachea el shell (~750 KB); `/fonts` (10 MB) e `images/people` van a
+  caché runtime; las respuestas `/api` NO se cachean (datos por usuario/token).
 
 ## Tests e2e (framework `e2e` de TesterArmy)
 

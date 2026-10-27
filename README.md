@@ -1,6 +1,7 @@
 # PeopleNet Mobile
 
-App móvil de recursos humanos construida con **Ionic + React + Vite + Capacitor**.
+App móvil de recursos humanos construida con **Ionic + React + Vite**.
+**Canal de distribución: PWA instalable** (no se publica en App Store/Google Play).
 
 Incluye login, dashboard, KPIs, documentos, solicitudes de permisos, organigrama, notificaciones y perfil de usuario.
 
@@ -18,25 +19,20 @@ npm run dev
 
 Abre `http://localhost:5173` en el navegador.
 
-## Build de producción
+## Build PWA (producción)
 
 ```bash
-npm run build
-npm run preview
+npm run build:pwa    # → dist/ con sw.js + manifest.webmanifest
+npm run preview      # verificar en http://localhost:4173
 ```
 
-## App nativa con Capacitor
+Despliegue en el Windows Server de peoplenet.info (subdominio `app.peoplenet.info`,
+IIS con reverse proxy `/api` → `:8080`): ver **`docs/PWA-DESPLIEGUE-WINDOWS-SERVER.md`**.
 
-Para compilar en iOS o Android:
+## App nativa con Capacitor (legacy)
 
-```bash
-npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
-npx cap init
-npm run build
-npx cap add android   # o ios
-npx cap sync
-npx cap open android  # o ios
-```
+Las tiendas ya no se publican (decisión 2026-10-27); los contenedores
+`android/`/`ios/` y los workflows de CI quedan como referencia histórica.
 
 ## Estructura
 

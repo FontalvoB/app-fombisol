@@ -2,10 +2,13 @@
 
 _Fecha: 2026-10-08 · Actualizar casillas al completar ✅ / ⛔_
 
-> CI Android **verificado 2026-10-08 17:01**: builds develop + main publicando en pista
-> interna (versionCode 3000006/3000007) tras fix de `GOOGLE_ADC_JSON` en base64.
+> **2026-10-27 — PIVOT A PWA:** la app ya NO se publica en Google Play ni App
+> Store (plataforma privada). El canal de distribución es la PWA instalable
+> desplegada en el Windows Server de peoplenet.info:
+> `docs/PWA-DESPLIEGUE-WINDOWS-SERVER.md`. Las secciones de tiendas de abajo
+> quedan ⛔ OBSOLETAS (se conservan solo como historia).
 
-## Google Play — bloqueantes para publicar producción
+## Google Play — bloqueantes para publicar producción ⛔ OBSOLETO (pivot PWA)
 
 | # | Pendiente | Dónde | Estado |
 |---|-----------|-------|--------|
@@ -17,7 +20,7 @@ _Fecha: 2026-10-08 · Actualizar casillas al completar ✅ / ⛔_
 | 6 | **Verificar check verde "Android developer registration"** (verificación de desarrollador Android, fecha límite 30-sep-2026) | Play Console Home | ⛔ |
 | 7 | **Lanzar producción** cuando 1–6 estén: Actions → `android-prod` → Run (status=draft) → consola → revisar países/notas → **Enviar para revisión** (1–7 días) | GitHub Actions + Play Console | ⛔ |
 
-## Apple App Store — bloqueantes para enviar a revisión
+## Apple App Store — bloqueantes para enviar a revisión ⛔ OBSOLETO (pivot PWA)
 (detalle completo: `docs/appstore/CHECKLIST-SUBMIT.md`)
 
 | # | Pendiente | Dónde | Estado |
@@ -34,7 +37,7 @@ _Fecha: 2026-10-08 · Actualizar casillas al completar ✅ / ⛔_
 - [ ] **Workflows iOS rotos** (commits "firma determinística P12" de la otra sesión fallan con YAML inválido 0s) — arreglar en esa sesión.
 - [ ] **Cert TLS prod vence 2027-03-18** — renovar ANTES de esa fecha (app nativa exige TLS válido).
 - [ ] **CORS del backend**: mantener `https://localhost` (Android) y `capacitor://localhost` (iOS) en el allowlist en cualquier cambio del server.
-- [ ] **WAF prod bloquea OPTIONS en /api** (Barracuda, "Web Page Blocked" 500, Attack ID 20000001, verificado 2026-10-13): el preflight CORS muere en el firewall. Mitigado en app con `CapacitorHttp` (capacitor.config.ts); **fix de raíz = pedir a infra/IT que permita método OPTIONS para `peoplenet.info/api/*` en el firewall**.
+- [x] **WAF prod bloquea OPTIONS en /api** (Barracuda, "Web Page Blocked" 500, Attack ID 20000001): ✅ **RESUELTO 2026-10-27** — GTD/infra desbloqueó el método OPTIONS. La PWA igual va same-origin (app.peoplenet.info proxyea /api al backend), por lo que ni siquiera se ejercita preflight.
 - [ ] Unificar nombre en tiendas: "PeopleNet" (Capacitor/iOS) vs "People Net" (listing Play).
 - [ ] Si algún día se agrega SDK de analítica/ads/crashlytics → actualizar Data safety (Play) y App Privacy (Apple).
 - [ ] Si se agrega registro self-service de cuentas → obrigatoria URL de eliminación de cuenta (Play) y botón de borrado in-app.
