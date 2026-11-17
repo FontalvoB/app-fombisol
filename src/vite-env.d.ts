@@ -1,4 +1,9 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/react" />
+
+/** Versión y fecha ISO de la compilación que se está ejecutando. */
+declare const __APP_VERSION__: string;
+declare const __BUILD_TIME__: string;
 
 /** Variables de entorno disponibles en la app (definidas en .env.[mode] o inyectadas por CI). */
 interface ImportMetaEnv {

@@ -27,6 +27,26 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy-pwa-server.ps1
 - El SW precachea el shell (~750 KB); `/fonts` (10 MB) e `images/people` van a
   caché runtime; las respuestas `/api` NO se cachean (datos por usuario/token).
 
+## PWA: actualización y sensación nativa
+
+- `registerType: 'prompt'` + `src/components/PwaUpdatePrompt.tsx`: cada despliegue
+  muestra «Nueva versión disponible» (Actualizar ahora / Más tarde). El SW se
+  revalida al volver a la app, al recuperar foco/red y cada hora; `deploy/web.config`
+  mantiene `sw.js`, `index.html` y el manifest sin caché.
+- `__APP_VERSION__` y `__BUILD_TIME__` se inyectan desde `vite.config.ts` y se
+  muestran en el aviso para identificar la compilación.
+- `src/redesign/native.css`: safe areas, scroll padding, targets táctiles de 44px,
+  feedback al pulsar, teclado Android y modo instalado. No aplica al login.
+- Manifest: `launch_handler` (reutiliza la ventana instalada) y `shortcuts`
+  (Nueva solicitud, Mis metas, Documentos).
+
+## Skills de agentes
+
+- Modern Web Guidance (guías web/PWA actualizadas de Chrome) está instalada en
+  `.agents/skills/modern-web-guidance/` (local, no versionada). Reinstalar:
+  `npx skills add GoogleChrome/modern-web-guidance --skill modern-web-guidance --agent codex opencode -y --copy`.
+  Consultar `SKILL.md` antes de cambios de HTML/CSS/JS de cliente.
+
 ## Tests e2e (framework `e2e` de TesterArmy)
 
 ```bash

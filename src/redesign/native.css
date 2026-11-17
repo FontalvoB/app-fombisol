@@ -1,0 +1,149 @@
+/* Ajustes del shell móvil. El login y el escritorio conservan sus estilos. */
+@media screen and (max-width: 760px) {
+  html:has(.pn-app),
+  body:has(.pn-app),
+  #root:has(.pn-app) {
+    height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  .pn-app {
+    --pn-native-topbar-height: calc(76px + env(safe-area-inset-top, 0px));
+    --pn-native-bottom-nav-height: calc(77px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pn-app .pn-main {
+    scroll-padding-top: var(--pn-native-topbar-height);
+    scroll-padding-bottom: var(--pn-native-bottom-nav-height);
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .pn-app .pn-main::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pn-app.keyboard-open .pn-main {
+    scroll-padding-bottom: 24px;
+  }
+
+  .pn-app .pn-topbar {
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .pn-app .vivid-bottom-nav {
+    -webkit-backdrop-filter: blur(22px);
+  }
+
+  .pn-app :is(.pn-topbar, .vivid-bottom-nav) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Mantiene visible el foco en campos que anulan el outline base. */
+  :is(.pn-app, .pn-modal) :is(input, select, textarea):focus-visible {
+    outline: 3px solid var(--pn-action, #045c94);
+    outline-offset: 3px;
+  }
+
+  /* Evita el zoom automático de iOS y respeta tamaños de texto mayores. */
+  :is(.pn-app, .pn-modal) :is(input, select, textarea) {
+    font-size: max(16px, 1em);
+  }
+
+  /* En modo instalado no hay barras del navegador que compensar. */
+  html[data-app-mode="standalone"]:has(.pn-app),
+  html[data-app-mode="standalone"] body:has(.pn-app),
+  html[data-app-mode="standalone"] #root:has(.pn-app) {
+    overscroll-behavior-y: none;
+  }
+
+  html[data-app-mode="standalone"] .pn-app .vivid-bottom-nav {
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  @media (pointer: coarse) {
+    .pn-app nav a,
+    .pn-app
+      :is(
+        .pn-icon-button,
+        .notification-button,
+        .mobile-menu,
+        .vivid-close-menu,
+        .vivid-header-eva,
+        .pn-header-profile
+      ),
+    .pn-modal .pn-icon-button {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .pn-app .vivid-bottom-nav > :is(a, button) {
+      min-width: 44px;
+      min-height: 56px;
+    }
+
+    /* Respuesta inmediata al pulsar, sin alterar el layout. */
+    :is(.pn-app, .pn-modal)
+      :is(
+        .pn-quick,
+        .pn-stat,
+        .vivid-request-card,
+        .document-card,
+        .metric-card,
+        .pn-icon-button,
+        .notification-button,
+        .mobile-menu,
+        .vivid-close-menu,
+        .vivid-header-eva,
+        .pn-header-profile
+      ):is(a[href], button, [role="button"]):not(:disabled):not(
+        [aria-disabled="true"]
+      ):active,
+    .pn-app
+      .vivid-bottom-nav
+      > :is(a[href], button):not(:disabled):not(
+        [aria-disabled="true"]
+      ):active {
+      background-color: var(--pn-blue-soft);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      :is(.pn-app, .pn-modal)
+        :is(
+          .pn-quick,
+          .pn-stat,
+          .vivid-request-card,
+          .document-card,
+          .metric-card,
+          .pn-icon-button,
+          .notification-button,
+          .mobile-menu,
+          .vivid-close-menu,
+          .vivid-header-eva,
+          .pn-header-profile
+        ):is(a[href], button, [role="button"]):not(:disabled):not(
+          [aria-disabled="true"]
+        ):active,
+      .pn-app
+        .vivid-bottom-nav
+        > :is(a[href], button):not(:disabled):not(
+          [aria-disabled="true"]
+        ):active {
+        transform: scale(0.97);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pn-app :is(.pn-quick, .pn-stat, .vivid-request-card):is(
+          :hover,
+          :active
+        ) {
+        transform: none;
+        transition-property: color, background-color, border-color, box-shadow;
+      }
+    }
+  }
+}

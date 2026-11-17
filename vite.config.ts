@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import { version } from './package.json'
 
 /**
  * Configuración del web manifest (PWA instalable). El shell estático se
@@ -24,6 +25,28 @@ const pwaManifest = {
   background_color: '#0B3E8F',
   categories: ['business', 'productivity'],
   prefer_related_applications: false,
+  // Reutiliza la ventana instalada al abrir enlaces de la app (Chromium).
+  launch_handler: { client_mode: 'navigate-existing' },
+  shortcuts: [
+    {
+      name: 'Nueva solicitud',
+      short_name: 'Solicitud',
+      url: '/dashboard/requests/new',
+      icons: [{ src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' }],
+    },
+    {
+      name: 'Mis metas',
+      short_name: 'Metas',
+      url: '/dashboard/kpis',
+      icons: [{ src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' }],
+    },
+    {
+      name: 'Documentos',
+      short_name: 'Documentos',
+      url: '/dashboard/documents',
+      icons: [{ src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' }],
+    },
+  ],
   icons: [
     { src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' },
     { src: 'icons/pwa-512.png', sizes: '512x512', type: 'image/png' },
@@ -43,14 +66,17 @@ const pwaManifest = {
 }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
-      // autoUpdate: la nueva versión se activa sola en la siguiente recarga,
-      // sin prompt (plataforma privada, sin necesidad de UI de actualización).
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // El hook de React registra el SW y solicita confirmar la actualización.
+      registerType: 'prompt',
+      injectRegister: null,
       includeAssets: ['icon.svg'],
       manifest: pwaManifest,
       workbox: {
